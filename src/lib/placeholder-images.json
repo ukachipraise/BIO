@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "scanner-preview",
+      "description": "A placeholder image for the scanner live preview.",
+      "imageUrl": "https://images.unsplash.com/photo-1659200501439-f090553a4fc2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxmaW5nZXJwcmludCUyMHNjYW58ZW58MHx8fHwxNzU4ODEwODM4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fingerprint scan"
+    },
+    {
+      "id": "camera-preview",
+      "description": "A placeholder image for the camera live preview.",
+      "imageUrl": "https://images.unsplash.com/photo-1671136328289-db906d71de07?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8aGFuZCUyMHBlcnNvbnxlbnwwfHx8fDE3NTg4MTA4Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "hand person"
+    },
+    {
+      "id": "camera-index-capture",
+      "description": "A captured image of an index finger from a camera.",
+      "imageUrl": "https://images.unsplash.com/photo-1588681269577-2a30a0d776e0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxpbmRleCUyMGZpbmdlcnxlbnwwfHx8fDE3NTg4MTA4Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "index finger"
+    },
+    {
+      "id": "camera-thumb-capture",
+      "description": "A captured image of a thumb from a camera.",
+      "imageUrl": "https://images.unsplash.com/photo-1594553950511-7d51225a98ef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx0aHVtYiUyMGZpbmdlcnxlbnwwfHx8fDE3NTg4MTA4Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "thumb finger"
+    },
+    {
+      "id": "scanner-index-capture",
+      "description": "A captured image of an index finger from a scanner.",
+      "imageUrl": "https://images.unsplash.com/photo-1611330500121-d9439ddc3d9d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmaW5nZXJwcmludCUyMHNjYW58ZW58MHx8fHwxNzU4ODEwODM4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fingerprint scan"
+    },
+    {
+      "id": "scanner-thumb-capture",
+      "description": "A captured image of a thumb from a scanner.",
+      "imageUrl": "https://images.unsplash.com/photo-1729338973448-335f1cc74c39?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxmaW5nZXJwcmludCUyMHNjYW58ZW58MHx8fHwxNzU4ODEwODM4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fingerprint scan"
+    }
+  ]
 }
