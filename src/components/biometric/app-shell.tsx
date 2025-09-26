@@ -134,19 +134,8 @@ export function AppShell() {
     const currentStep = CAPTURE_STEPS[currentStepIndex];
     if (!currentCaptureData || !currentStep) return;
 
-    const isBinary = file.type === 'application/octet-stream' || file.name.endsWith('.bin');
-    const isImage = file.type.startsWith('image/');
+    const isBinary = !file.type.startsWith('image/');
     
-    // Allow either image or binary, but nothing else.
-    if (!isImage && !isBinary) {
-        toast({
-            variant: "destructive",
-            title: "Unsupported File Type",
-            description: "Please upload a supported image or .bin file.",
-        });
-        return;
-    }
-
     const reader = new FileReader();
     reader.onload = (e) => {
         const dataUri = e.target?.result as string;

@@ -88,7 +88,7 @@ function CapturePreview({ step, capturedImage, videoRef, hasCameraPermission }: 
             return (
                 <div className="flex flex-col items-center justify-center h-full bg-muted text-center p-4">
                     <File className="w-16 h-16 text-muted-foreground mb-4" />
-                    <h3 className="font-semibold text-foreground">Binary File Uploaded</h3>
+                    <h3 className="font-semibold text-foreground">File Uploaded</h3>
                     <p className="text-sm text-muted-foreground">{capturedImage.fileName}</p>
                 </div>
             );
@@ -121,7 +121,7 @@ function CapturePreview({ step, capturedImage, videoRef, hasCameraPermission }: 
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
                 <Fingerprint className="w-12 h-12 text-muted-foreground mb-4" />
                 <p className="font-semibold text-foreground">Upload Fingerprint Data</p>
-                <p className="text-sm text-muted-foreground">Select an image or .bin file from your device.</p>
+                <p className="text-sm text-muted-foreground">Select a file from your device.</p>
             </div>
         </>
     );
@@ -159,7 +159,7 @@ export function CaptureView({
 }: CaptureViewProps) {
   const isCameraStep = step.device === 'camera';
   const canCapture = isCameraStep ? hasCameraPermission : true;
-  const fileAccept = isCameraStep ? "image/*" : "image/*,.bin,application/octet-stream";
+  const fileAccept = "*/*";
 
   return (
     <Card>
