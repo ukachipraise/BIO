@@ -3,8 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Device, CapturedDataSet, WorkflowStatus, CapturedImage, CaptureStepId } from '@/lib/types';
 import { CAPTURE_STEPS, INITIAL_DEVICES } from '@/lib/constants';
-import { generateUniqueId, urlToDataUri, exportToSql } from '@/lib/utils';
-import { getPlaceholderImage } from '@/lib/placeholder-images';
+import { generateUniqueId, exportToSql } from '@/lib/utils';
 import { getImageQualityFeedback } from '@/ai/flows/real-time-image-quality-feedback';
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,7 +13,6 @@ import { DeviceStatus } from './device-status';
 import { WorkflowIdleView } from './workflow-idle-view';
 import { CaptureView } from './capture-view';
 import { ValidationView } from './validation-view';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function AppShell() {
   const [isClient, setIsClient] = useState(false);
@@ -74,83 +72,71 @@ export function AppShell() {
     });
   };
 
-  const handleImageCapture = async () => {
+  const processImage = async (dataUri: string, device: 'camera' | 'scanner') => {
     if (!currentCaptureData) return;
-
     const currentStep = CAPTURE_STEPS[currentStepIndex];
-    let imageUrl: string | undefined;
-    let dataUri: string | undefined;
-
-    if (currentStep.device === 'camera') {
-        if (videoRef.current && canvasRef.current) {
-            const video = videoRef.current;
-            const canvas = canvasRef.current;
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext('2d');
-            context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-            dataUri = canvas.toDataURL('image/jpeg');
-            imageUrl = dataUri;
-        }
-    } else {
-        // This part is now handled by handleFileUpload for scanners
-        return;
-    }
-
-    if (!imageUrl || !dataUri) return;
 
     let updatedImages = { ...currentCaptureData.images };
     updatedImages[currentStep.id] = {
-      ...updatedImages[currentStep.id],
-      feedbackLoading: true,
-      url: imageUrl,
       stepId: currentStep.id,
-      device: 'camera'
+      url: dataUri,
+      dataUri,
+      feedbackLoading: device === 'camera', // Only show loading for camera
+      device,
     };
     setCurrentCaptureData({ ...currentCaptureData, images: updatedImages });
-    
-    let feedback = null;
-    try {
-      feedback = await getImageQualityFeedback({ photoDataUri: dataUri });
-    } catch (error) {
-      console.error("AI feedback failed:", error);
-      toast({
-        variant: "destructive",
-        title: "AI Analysis Failed",
-        description: "Could not get image quality feedback.",
+
+    if (device === 'camera') {
+      let feedback = null;
+      try {
+        feedback = await getImageQualityFeedback({ photoDataUri: dataUri });
+      } catch (error) {
+        console.error("AI feedback failed:", error);
+        toast({
+          variant: "destructive",
+          title: "AI Analysis Failed",
+          description: "Could not get image quality feedback.",
+        });
+      }
+      
+      // Re-fetch state in case it changed during async operation
+      setCurrentCaptureData(prevData => {
+        if (!prevData) return null;
+        const freshImages = { ...prevData.images };
+        freshImages[currentStep.id] = {
+          ...freshImages[currentStep.id],
+          qualityFeedback: feedback,
+          feedbackLoading: false,
+        };
+        return { ...prevData, images: freshImages };
       });
     }
-    
-    updatedImages = { ...currentCaptureData.images }; // Re-fetch in case state changed
-    updatedImages[currentStep.id] = {
-      stepId: currentStep.id,
-      url: imageUrl,
-      dataUri,
-      qualityFeedback: feedback,
-      feedbackLoading: false,
-      device: 'camera',
-    };
-    setCurrentCaptureData({ ...currentCaptureData, images: updatedImages });
+  };
+
+  const handleImageCapture = async () => {
+    if (videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        if (context) {
+          context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+          const dataUri = canvas.toDataURL('image/jpeg');
+          processImage(dataUri, 'camera');
+        }
+    }
   };
 
   const handleFileUpload = (file: File) => {
-    if (!currentCaptureData) return;
-
     const currentStep = CAPTURE_STEPS[currentStepIndex];
+    if (!currentCaptureData || !currentStep) return;
+
     const reader = new FileReader();
     reader.onload = (e) => {
         const dataUri = e.target?.result as string;
         if (dataUri) {
-            const updatedImages = { ...currentCaptureData.images };
-            updatedImages[currentStep.id] = {
-                stepId: currentStep.id,
-                url: dataUri,
-                dataUri,
-                qualityFeedback: null, // No AI feedback for scanner uploads
-                feedbackLoading: false,
-                device: 'scanner',
-            };
-            setCurrentCaptureData({ ...currentCaptureData, images: updatedImages });
+          processImage(dataUri, currentStep.device);
         }
     };
     reader.onerror = () => {

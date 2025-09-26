@@ -18,6 +18,7 @@ import { getPlaceholderImage } from "@/lib/placeholder-images";
 import type { CaptureStep, CapturedImage } from "@/lib/types";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { Separator } from "../ui/separator";
 
 interface CaptureViewProps {
   step: CaptureStep;
@@ -117,7 +118,7 @@ function CapturePreview({ step, capturedImage, videoRef, hasCameraPermission }: 
     );
 }
 
-function ScannerUpload({ onFileUpload }: { onFileUpload: (file: File) => void }) {
+function FileUpload({ onFileUpload, idPrefix }: { onFileUpload: (file: File) => void, idPrefix: string }) {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,13 +130,12 @@ function ScannerUpload({ onFileUpload }: { onFileUpload: (file: File) => void })
 
     return (
         <div className="grid w-full max-w-sm items-center gap-1.5">
-          <Label htmlFor="fingerprint-upload">Upload File</Label>
-          <Input id="fingerprint-upload" type="file" accept="image/*" onChange={handleFileChange} ref={inputRef} />
-          <p className="text-xs text-muted-foreground">Upload an image of the fingerprint scan.</p>
+          <Label htmlFor={`${idPrefix}-upload`}>Upload File</Label>
+          <Input id={`${idPrefix}-upload`} type="file" accept="image/*" onChange={handleFileChange} ref={inputRef} />
+          <p className="text-xs text-muted-foreground">Or upload an image from your device.</p>
         </div>
     );
 }
-
 
 export function CaptureView({
   step,
@@ -171,8 +171,22 @@ export function CaptureView({
             />
         </div>
         <div className="flex flex-col justify-center space-y-4">
-          {!capturedImage && !isCameraStep && (
-            <ScannerUpload onFileUpload={onFileUpload} />
+          {!capturedImage && (
+             isCameraStep ? (
+                <div className="space-y-4">
+                    <Button onClick={onCapture} size="lg" disabled={!canCapture} className="w-full">
+                        <Camera className="mr-2" /> Capture from Camera
+                    </Button>
+                    <div className="flex items-center gap-4">
+                        <Separator className="flex-1" />
+                        <span className="text-xs text-muted-foreground">OR</span>
+                        <Separator className="flex-1" />
+                    </div>
+                    <FileUpload onFileUpload={onFileUpload} idPrefix="camera" />
+                </div>
+            ) : (
+                <FileUpload onFileUpload={onFileUpload} idPrefix="scanner" />
+            )
           )}
           {capturedImage && <ImageQualityCard image={capturedImage} />}
         </div>
@@ -187,13 +201,10 @@ export function CaptureView({
               <Check className="mr-2" /> Accept & Continue
             </Button>
           </>
-        ) : isCameraStep ? (
-          <Button onClick={onCapture} size="lg" disabled={!canCapture}>
-            <Camera className="mr-2" /> Capture
-          </Button>
         ) : (
           <Button size="lg" disabled={true}>
-            <Upload className="mr-2" /> Awaiting Upload...
+            {isCameraStep ? <Camera className="mr-2" /> : <Upload className="mr-2" />}
+            Awaiting Input...
           </Button>
         )}
       </CardFooter>
