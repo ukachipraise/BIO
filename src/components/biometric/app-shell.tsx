@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Device, CapturedDataSet, WorkflowStatus, CapturedImage, CaptureStepId } from '@/lib/types';
 import { CAPTURE_STEPS, INITIAL_DEVICES } from '@/lib/constants';
 import { generateUniqueId, urlToDataUri, exportToSql } from '@/lib/utils';
@@ -14,6 +14,7 @@ import { DeviceStatus } from './device-status';
 import { WorkflowIdleView } from './workflow-idle-view';
 import { CaptureView } from './capture-view';
 import { ValidationView } from './validation-view';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function AppShell() {
   const [isClient, setIsClient] = useState(false);
@@ -24,17 +25,39 @@ export function AppShell() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [currentCaptureData, setCurrentCaptureData] = useState<CapturedDataSet | null>(null);
   const { toast } = useToast();
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     setIsClient(true);
-    // Simulate device connection check
+    const getCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setDevices(prev => prev.map(d => d.name === 'Phone Camera' ? { ...d, status: 'connected' } : d));
+        setHasCameraPermission(true);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setDevices(prev => prev.map(d => d.name === 'Phone Camera' ? { ...d, status: 'disconnected' } : d));
+        setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Camera Access Denied',
+          description: 'Please enable camera permissions in your browser settings to use this app.',
+        });
+      }
+    };
+    getCameraPermission();
+
+    // Simulate fingerprint scanner connection
     setTimeout(() => {
-      setDevices([
-        { name: 'Phone Camera', status: 'connected' },
-        { name: 'Fingerprint Scanner', status: 'connected' },
-      ]);
+      setDevices(prev => prev.map(d => d.name === 'Fingerprint Scanner' ? { ...d, status: 'connected' } : d));
     }, 1500);
-  }, []);
+
+  }, [toast]);
 
   const handleDbSelect = (name: string) => {
     setDatabaseName(name);
@@ -55,7 +78,24 @@ export function AppShell() {
     if (!currentCaptureData) return;
 
     const currentStep = CAPTURE_STEPS[currentStepIndex];
-    const imageUrl = getPlaceholderImage(currentStep.placeholderId)?.imageUrl;
+    let imageUrl: string | undefined;
+    let dataUri: string | undefined;
+
+    if (currentStep.device === 'camera') {
+        if (videoRef.current && canvasRef.current) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+            dataUri = canvas.toDataURL('image/jpeg');
+            imageUrl = dataUri;
+        }
+    } else {
+        imageUrl = getPlaceholderImage(currentStep.placeholderId)?.imageUrl;
+    }
+
     if (!imageUrl) return;
 
     let updatedImages = { ...currentCaptureData.images };
@@ -67,7 +107,10 @@ export function AppShell() {
     };
     setCurrentCaptureData({ ...currentCaptureData, images: updatedImages });
 
-    const dataUri = await urlToDataUri(imageUrl);
+    if (!dataUri) {
+        dataUri = await urlToDataUri(imageUrl);
+    }
+    
     let feedback = null;
     if (currentStep.device === 'camera' && dataUri) {
       try {
@@ -161,6 +204,8 @@ export function AppShell() {
               onCapture={handleImageCapture}
               onAccept={handleAcceptImage}
               onRecapture={handleRecapture}
+              videoRef={videoRef}
+              hasCameraPermission={hasCameraPermission}
             />
           )}
 
@@ -173,6 +218,7 @@ export function AppShell() {
           )}
         </div>
       </main>
+      <canvas ref={canvasRef} className="hidden"></canvas>
       <footer className="text-center p-4 text-sm text-muted-foreground">
         Biometric Capture Pro &copy; {new Date().getFullYear()}
       </footer>

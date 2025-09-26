@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import React from 'react';
 import {
   Card,
   CardContent,
@@ -12,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Camera, Check, RefreshCw, Loader2, Sparkles, X, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Camera, Check, RefreshCw, Loader2, Sparkles, ThumbsDown, ThumbsUp, VideoOff } from "lucide-react";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 import type { CaptureStep, CapturedImage } from "@/lib/types";
 
@@ -23,6 +24,8 @@ interface CaptureViewProps {
   onCapture: () => void;
   onAccept: () => void;
   onRecapture: () => void;
+  videoRef: React.RefObject<HTMLVideoElement>;
+  hasCameraPermission: boolean | null;
 }
 
 function ImageQualityCard({ image }: { image: CapturedImage }) {
@@ -71,6 +74,41 @@ function ImageQualityCard({ image }: { image: CapturedImage }) {
   );
 }
 
+function CapturePreview({ step, capturedImage, videoRef, hasCameraPermission }: Pick<CaptureViewProps, 'step' | 'capturedImage' | 'videoRef' | 'hasCameraPermission'>) {
+    const placeholderUrl = getPlaceholderImage(step.previewId)?.imageUrl ?? "/placeholder.svg";
+
+    if (capturedImage) {
+        return <Image src={capturedImage.url} alt="Captured image" fill className="object-cover" />;
+    }
+
+    if (step.device === 'camera') {
+        return (
+            <>
+                <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                {hasCameraPermission === false && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white p-4">
+                        <VideoOff className="w-12 h-12 mb-4" />
+                        <h3 className="text-lg font-semibold">Camera Access Denied</h3>
+                        <p className="text-center text-sm">Please enable camera permissions in your browser settings.</p>
+                    </div>
+                )}
+                <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                    Live Preview
+                </div>
+            </>
+        );
+    }
+    
+    return (
+        <>
+            <Image src={placeholderUrl} alt="Live preview" fill className="object-cover" data-ai-hint="fingerprint scan" />
+            <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                Live Preview
+            </div>
+        </>
+    );
+}
+
 export function CaptureView({
   step,
   progress,
@@ -78,9 +116,11 @@ export function CaptureView({
   onCapture,
   onAccept,
   onRecapture,
+  videoRef,
+  hasCameraPermission,
 }: CaptureViewProps) {
-  const previewUrl = getPlaceholderImage(step.previewId)?.imageUrl ?? "/placeholder.svg";
-  const displayUrl = capturedImage?.url ?? previewUrl;
+  const isCameraStep = step.device === 'camera';
+  const canCapture = isCameraStep ? hasCameraPermission : true;
 
   return (
     <Card>
@@ -93,19 +133,13 @@ export function CaptureView({
         <CardDescription>{step.instructions}</CardDescription>
       </CardHeader>
       <CardContent className="grid md:grid-cols-2 gap-6">
-        <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
-          <Image
-            src={displayUrl}
-            alt={capturedImage ? "Captured image" : "Live preview"}
-            fill
-            className="object-cover"
-            data-ai-hint={capturedImage ? "fingerprint photo" : "live feed"}
-          />
-          {!capturedImage && (
-            <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-              Live Preview
-            </div>
-          )}
+        <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-muted">
+            <CapturePreview 
+                step={step} 
+                capturedImage={capturedImage}
+                videoRef={videoRef}
+                hasCameraPermission={hasCameraPermission}
+            />
         </div>
         <div className="flex flex-col justify-center space-y-4">
           {capturedImage && <ImageQualityCard image={capturedImage} />}
@@ -122,7 +156,7 @@ export function CaptureView({
             </Button>
           </>
         ) : (
-          <Button onClick={onCapture} size="lg">
+          <Button onClick={onCapture} size="lg" disabled={!canCapture}>
             <Camera className="mr-2" /> Capture
           </Button>
         )}
