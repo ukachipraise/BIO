@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Device, CapturedDataSet, WorkflowStatus, CapturedImage, CaptureStepId } from '@/lib/types';
 import { CAPTURE_STEPS, INITIAL_DEVICES } from '@/lib/constants';
-import { generateUniqueId, exportToSql, exportToCsv } from '@/lib/utils';
+import { generateUniqueId, exportToSql, exportToCsv, exportToIpynb } from '@/lib/utils';
 import { getImageQualityFeedback } from '@/ai/flows/real-time-image-quality-feedback';
 import { useToast } from "@/hooks/use-toast";
 
@@ -134,7 +134,7 @@ export function AppShell() {
     const currentStep = CAPTURE_STEPS[currentStepIndex];
     if (!currentCaptureData || !currentStep) return;
 
-    const isBinary = !file.type.startsWith('image/') && (file.type === 'application/octet-stream' || file.name.endsWith('.bin'));
+    const isBinary = !file.type.startsWith('image/');
     
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -184,7 +184,7 @@ export function AppShell() {
     setCurrentCaptureData(null);
   };
   
-  const handleExport = (format: 'sql' | 'csv') => {
+  const handleExport = (format: 'sql' | 'csv' | 'ipynb') => {
     if (allRecords.length === 0) {
       toast({
         variant: "destructive",
@@ -194,9 +194,11 @@ export function AppShell() {
       return;
     }
 
+    const fileNameBase = databaseName || 'biometric-data';
+
     if (format === 'sql') {
-      exportToSql(allRecords, `${databaseName || 'biometric-data'}.sql`);
-      toast({ title: "Export Successful", description: `Data exported to ${databaseName || 'biometric-data'}.sql` });
+      exportToSql(allRecords, `${fileNameBase}.sql`);
+      toast({ title: "Export Successful", description: `Data exported to ${fileNameBase}.sql` });
     } else if (format === 'csv') {
       // We need to flatten the data for CSV export
       const flattenedData = allRecords.flatMap(record => 
@@ -215,8 +217,11 @@ export function AppShell() {
           // url: image.url.substring(0, 30) + '...',
         }))
       );
-      exportToCsv(flattenedData, `${databaseName || 'biometric-data'}.csv`);
-      toast({ title: "Export Successful", description: `Data exported to ${databaseName || 'biometric-data'}.csv` });
+      exportToCsv(flattenedData, `${fileNameBase}.csv`);
+      toast({ title: "Export Successful", description: `Data exported to ${fileNameBase}.csv` });
+    } else if (format === 'ipynb') {
+      exportToIpynb(allRecords, `${fileNameBase}.ipynb`);
+      toast({ title: "Export Successful", description: `Data exported to ${fileNameBase}.ipynb` });
     }
   };
 

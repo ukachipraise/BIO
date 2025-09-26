@@ -11,7 +11,7 @@ import {
 
 interface HeaderProps {
   databaseName: string;
-  onExport: (format: 'sql' | 'csv') => void;
+  onExport: (format: 'sql' | 'csv' | 'ipynb') => void;
   recordCount: number;
 }
 
@@ -44,6 +44,9 @@ export function Header({ databaseName, onExport, recordCount }: HeaderProps) {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onExport('csv')}>
                 Export to Excel (.csv)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExport('ipynb')}>
+                Export to Notebook (.ipynb)
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

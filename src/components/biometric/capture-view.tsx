@@ -159,7 +159,7 @@ export function CaptureView({
 }: CaptureViewProps) {
   const isCameraStep = step.device === 'camera';
   const canCapture = isCameraStep ? hasCameraPermission : true;
-  const fileAccept = "*/*";
+  const fileAccept = isCameraStep ? "image/*" : "*/*";
 
   return (
     <Card>
@@ -192,7 +192,7 @@ export function CaptureView({
                         <span className="text-xs text-muted-foreground">OR</span>
                         <Separator className="flex-1" />
                     </div>
-                    <FileUpload onFileUpload={onFileUpload} idPrefix="camera" accept={"image/*"} />
+                    <FileUpload onFileUpload={onFileUpload} idPrefix="camera" accept={fileAccept} />
                 </div>
             ) : (
                 <FileUpload onFileUpload={onFileUpload} idPrefix="scanner" accept={fileAccept} />
