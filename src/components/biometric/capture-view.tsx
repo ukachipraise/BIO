@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -13,15 +13,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Camera, Check, RefreshCw, Loader2, Sparkles, ThumbsDown, ThumbsUp, VideoOff } from "lucide-react";
+import { Camera, Check, RefreshCw, Loader2, Sparkles, ThumbsDown, ThumbsUp, VideoOff, Upload } from "lucide-react";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 import type { CaptureStep, CapturedImage } from "@/lib/types";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
 interface CaptureViewProps {
   step: CaptureStep;
   progress: { current: number; total: number };
   capturedImage: CapturedImage | undefined;
   onCapture: () => void;
+  onFileUpload: (file: File) => void;
   onAccept: () => void;
   onRecapture: () => void;
   videoRef: React.RefObject<HTMLVideoElement>;
@@ -29,6 +32,8 @@ interface CaptureViewProps {
 }
 
 function ImageQualityCard({ image }: { image: CapturedImage }) {
+  if (image.device !== 'camera') return null;
+
   if (image.feedbackLoading) {
     return (
       <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
@@ -99,21 +104,45 @@ function CapturePreview({ step, capturedImage, videoRef, hasCameraPermission }: 
         );
     }
     
+    // For scanner
     return (
         <>
-            <Image src={placeholderUrl} alt="Live preview" fill className="object-cover" data-ai-hint="fingerprint scan" />
-            <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-                Live Preview
+            <Image src={placeholderUrl} alt="Scanner placeholder" fill className="object-cover opacity-20" data-ai-hint="fingerprint scan" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                <Upload className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="font-semibold text-foreground">Upload Fingerprint Image</p>
+                <p className="text-sm text-muted-foreground">Select an image file from your device.</p>
             </div>
         </>
     );
 }
+
+function ScannerUpload({ onFileUpload }: { onFileUpload: (file: File) => void }) {
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            onFileUpload(file);
+        }
+    };
+
+    return (
+        <div className="grid w-full max-w-sm items-center gap-1.5">
+          <Label htmlFor="fingerprint-upload">Upload File</Label>
+          <Input id="fingerprint-upload" type="file" accept="image/*" onChange={handleFileChange} ref={inputRef} />
+          <p className="text-xs text-muted-foreground">Upload an image of the fingerprint scan.</p>
+        </div>
+    );
+}
+
 
 export function CaptureView({
   step,
   progress,
   capturedImage,
   onCapture,
+  onFileUpload,
   onAccept,
   onRecapture,
   videoRef,
@@ -142,6 +171,9 @@ export function CaptureView({
             />
         </div>
         <div className="flex flex-col justify-center space-y-4">
+          {!capturedImage && !isCameraStep && (
+            <ScannerUpload onFileUpload={onFileUpload} />
+          )}
           {capturedImage && <ImageQualityCard image={capturedImage} />}
         </div>
       </CardContent>
@@ -155,9 +187,13 @@ export function CaptureView({
               <Check className="mr-2" /> Accept & Continue
             </Button>
           </>
-        ) : (
+        ) : isCameraStep ? (
           <Button onClick={onCapture} size="lg" disabled={!canCapture}>
             <Camera className="mr-2" /> Capture
+          </Button>
+        ) : (
+          <Button size="lg" disabled={true}>
+            <Upload className="mr-2" /> Awaiting Upload...
           </Button>
         )}
       </CardFooter>

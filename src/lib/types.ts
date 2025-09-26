@@ -24,6 +24,7 @@ export type CapturedImage = {
   dataUri?: string;
   qualityFeedback?: ImageQualityFeedbackOutput | null;
   feedbackLoading?: boolean;
+  device: 'camera' | 'scanner';
 };
 
 export type CapturedDataSet = {

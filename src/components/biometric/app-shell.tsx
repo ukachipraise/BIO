@@ -93,10 +93,11 @@ export function AppShell() {
             imageUrl = dataUri;
         }
     } else {
-        imageUrl = getPlaceholderImage(currentStep.placeholderId)?.imageUrl;
+        // This part is now handled by handleFileUpload for scanners
+        return;
     }
 
-    if (!imageUrl) return;
+    if (!imageUrl || !dataUri) return;
 
     let updatedImages = { ...currentCaptureData.images };
     updatedImages[currentStep.id] = {
@@ -104,25 +105,20 @@ export function AppShell() {
       feedbackLoading: true,
       url: imageUrl,
       stepId: currentStep.id,
+      device: 'camera'
     };
     setCurrentCaptureData({ ...currentCaptureData, images: updatedImages });
-
-    if (!dataUri) {
-        dataUri = await urlToDataUri(imageUrl);
-    }
     
     let feedback = null;
-    if (currentStep.device === 'camera' && dataUri) {
-      try {
-        feedback = await getImageQualityFeedback({ photoDataUri: dataUri });
-      } catch (error) {
-        console.error("AI feedback failed:", error);
-        toast({
-          variant: "destructive",
-          title: "AI Analysis Failed",
-          description: "Could not get image quality feedback.",
-        });
-      }
+    try {
+      feedback = await getImageQualityFeedback({ photoDataUri: dataUri });
+    } catch (error) {
+      console.error("AI feedback failed:", error);
+      toast({
+        variant: "destructive",
+        title: "AI Analysis Failed",
+        description: "Could not get image quality feedback.",
+      });
     }
     
     updatedImages = { ...currentCaptureData.images }; // Re-fetch in case state changed
@@ -132,8 +128,39 @@ export function AppShell() {
       dataUri,
       qualityFeedback: feedback,
       feedbackLoading: false,
+      device: 'camera',
     };
     setCurrentCaptureData({ ...currentCaptureData, images: updatedImages });
+  };
+
+  const handleFileUpload = (file: File) => {
+    if (!currentCaptureData) return;
+
+    const currentStep = CAPTURE_STEPS[currentStepIndex];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const dataUri = e.target?.result as string;
+        if (dataUri) {
+            const updatedImages = { ...currentCaptureData.images };
+            updatedImages[currentStep.id] = {
+                stepId: currentStep.id,
+                url: dataUri,
+                dataUri,
+                qualityFeedback: null, // No AI feedback for scanner uploads
+                feedbackLoading: false,
+                device: 'scanner',
+            };
+            setCurrentCaptureData({ ...currentCaptureData, images: updatedImages });
+        }
+    };
+    reader.onerror = () => {
+        toast({
+            variant: "destructive",
+            title: "File Read Error",
+            description: "Could not read the selected file.",
+        });
+    };
+    reader.readAsDataURL(file);
   };
   
   const handleAcceptImage = () => {
@@ -202,6 +229,7 @@ export function AppShell() {
               progress={{ current: currentStepIndex + 1, total: CAPTURE_STEPS.length }}
               capturedImage={capturedImage}
               onCapture={handleImageCapture}
+              onFileUpload={handleFileUpload}
               onAccept={handleAcceptImage}
               onRecapture={handleRecapture}
               videoRef={videoRef}
