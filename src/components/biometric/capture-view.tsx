@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -159,7 +160,7 @@ export function CaptureView({
 }: CaptureViewProps) {
   const isCameraStep = step.device === 'camera';
   const canCapture = isCameraStep ? hasCameraPermission : true;
-  const fileAccept = isCameraStep ? "image/*" : "*/*";
+  const fileAccept = "*/*";
 
   return (
     <Card>
@@ -221,3 +222,5 @@ export function CaptureView({
     </Card>
   );
 }
+
+    
