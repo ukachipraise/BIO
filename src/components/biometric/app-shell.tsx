@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Device, CapturedDataSet, WorkflowStatus, CapturedImage, CaptureStepId } from '@/lib/types';
 import { CAPTURE_STEPS, INITIAL_DEVICES } from '@/lib/constants';
-import { generateUniqueId, exportToSql } from '@/lib/utils';
+import { generateUniqueId, exportToSql, exportToCsv } from '@/lib/utils';
 import { getImageQualityFeedback } from '@/ai/flows/real-time-image-quality-feedback';
 import { useToast } from "@/hooks/use-toast";
 
@@ -125,7 +125,7 @@ export function AppShell() {
         if (context) {
           context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
           const dataUri = canvas.toDataURL('image/jpeg');
-          processImage(dataUri, 'camera');
+          processImage(dataUri, 'camera', false);
         }
     }
   };
@@ -134,7 +134,7 @@ export function AppShell() {
     const currentStep = CAPTURE_STEPS[currentStepIndex];
     if (!currentCaptureData || !currentStep) return;
 
-    const isBinary = !file.type.startsWith('image/');
+    const isBinary = !file.type.startsWith('image/') && (file.type === 'application/octet-stream' || file.name.endsWith('.bin'));
     
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -184,7 +184,7 @@ export function AppShell() {
     setCurrentCaptureData(null);
   };
   
-  const handleExport = () => {
+  const handleExport = (format: 'sql' | 'csv') => {
     if (allRecords.length === 0) {
       toast({
         variant: "destructive",
@@ -194,8 +194,30 @@ export function AppShell() {
       return;
     }
 
-    exportToSql(allRecords, `${databaseName || 'biometric-data'}.sql`);
-    toast({ title: "Export Successful", description: `Data exported to ${databaseName || 'biometric-data'}.sql` });
+    if (format === 'sql') {
+      exportToSql(allRecords, `${databaseName || 'biometric-data'}.sql`);
+      toast({ title: "Export Successful", description: `Data exported to ${databaseName || 'biometric-data'}.sql` });
+    } else if (format === 'csv') {
+      // We need to flatten the data for CSV export
+      const flattenedData = allRecords.flatMap(record => 
+        Object.values(record.images).map(image => ({
+          record_id: record.id,
+          timestamp: record.timestamp,
+          step_id: image.stepId,
+          device: image.device,
+          is_binary: image.isBinary,
+          file_name: image.fileName,
+          quality_score: image.qualityFeedback?.qualityScore,
+          blur_level: image.qualityFeedback?.blurLevel,
+          lighting_condition: image.qualityFeedback?.lightingCondition,
+          feedback: image.qualityFeedback?.feedback,
+          // url is too long for CSV, so we omit it or provide a truncated version
+          // url: image.url.substring(0, 30) + '...',
+        }))
+      );
+      exportToCsv(flattenedData, `${databaseName || 'biometric-data'}.csv`);
+      toast({ title: "Export Successful", description: `Data exported to ${databaseName || 'biometric-data'}.csv` });
+    }
   };
 
   if (!isClient) return null;

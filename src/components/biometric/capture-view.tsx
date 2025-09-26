@@ -192,7 +192,7 @@ export function CaptureView({
                         <span className="text-xs text-muted-foreground">OR</span>
                         <Separator className="flex-1" />
                     </div>
-                    <FileUpload onFileUpload={onFileUpload} idPrefix="camera" accept={fileAccept} />
+                    <FileUpload onFileUpload={onFileUpload} idPrefix="camera" accept={"image/*"} />
                 </div>
             ) : (
                 <FileUpload onFileUpload={onFileUpload} idPrefix="scanner" accept={fileAccept} />

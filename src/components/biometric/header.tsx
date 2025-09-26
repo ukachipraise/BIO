@@ -1,12 +1,17 @@
 "use client";
 
-import { Fingerprint, Download } from "lucide-react";
+import { Fingerprint, Download, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   databaseName: string;
-  onExport: () => void;
+  onExport: (format: 'sql' | 'csv') => void;
   recordCount: number;
 }
 
@@ -25,10 +30,23 @@ export function Header({ databaseName, onExport, recordCount }: HeaderProps) {
             <p className="text-sm font-medium">{databaseName}</p>
             <p className="text-xs text-muted-foreground">{recordCount} records saved</p>
           </div>
-          <Button onClick={onExport} disabled={recordCount === 0}>
-            <Download className="mr-2" />
-            Export to SQL
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button disabled={recordCount === 0}>
+                <Download className="mr-2" />
+                Export Data
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onExport('sql')}>
+                Export to SQL
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExport('csv')}>
+                Export to Excel (.csv)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
