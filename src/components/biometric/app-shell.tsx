@@ -137,6 +137,7 @@ export function AppShell() {
     const isBinary = file.type === 'application/octet-stream' || file.name.endsWith('.bin');
     const isImage = file.type.startsWith('image/');
     
+    // Allow either image or binary, but nothing else.
     if (!isImage && !isBinary) {
         toast({
             variant: "destructive",
