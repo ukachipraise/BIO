@@ -33,7 +33,7 @@ interface CaptureViewProps {
 }
 
 function ImageQualityCard({ image }: { image: CapturedImage }) {
-  if (image.device !== 'camera') return null;
+  if (image.isBinary || image.device !== 'camera') return null;
 
   if (image.feedbackLoading) {
     return (
@@ -159,7 +159,7 @@ export function CaptureView({
 }: CaptureViewProps) {
   const isCameraStep = step.device === 'camera';
   const canCapture = isCameraStep ? hasCameraPermission : true;
-  const fileAccept = isCameraStep ? "image/*" : "image/*,.bin";
+  const fileAccept = isCameraStep ? "image/*" : "image/*,.bin,application/octet-stream";
 
   return (
     <Card>

@@ -143,12 +143,12 @@ export function AppShell() {
           if (isBinary) {
             processImage(dataUri, 'scanner', true, file.name);
           } else if (file.type.startsWith('image/')) {
-            processImage(dataUri, currentStep.device);
+            processImage(dataUri, currentStep.device, false, file.name);
           } else {
              toast({
                 variant: "destructive",
                 title: "Unsupported File Type",
-                description: "Please upload an image or .bin file.",
+                description: "Please upload a supported image or .bin file.",
             });
           }
         }
