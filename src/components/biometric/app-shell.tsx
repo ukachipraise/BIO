@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import type { Device, CapturedDataSet, WorkflowStatus, CapturedImage, CaptureStepId } from '@/lib/types';
 import { CAPTURE_STEPS, INITIAL_DEVICES } from '@/lib/constants';
-import { generateUniqueId, urlToDataUri, exportToCsv } from '@/lib/utils';
+import { generateUniqueId, urlToDataUri, exportToSql } from '@/lib/utils';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { getImageQualityFeedback } from '@/ai/flows/real-time-image-quality-feedback';
 import { useToast } from "@/hooks/use-toast";
@@ -134,21 +134,8 @@ export function AppShell() {
       return;
     }
 
-    const dataToExport = allRecords.map(record => ({
-      id: record.id,
-      timestamp: record.timestamp,
-      ...Object.fromEntries(
-        Object.entries(record.images).map(([key, value]) => [`image_${key}_url`, value?.url])
-      ),
-      ...Object.fromEntries(
-        Object.entries(record.images).flatMap(([key, value]) => 
-          value?.qualityFeedback ? Object.entries(value.qualityFeedback).map(([qKey, qValue]) => [`feedback_${key}_${qKey}`, qValue]) : []
-        )
-      )
-    }));
-
-    exportToCsv(dataToExport, `${databaseName || 'biometric-data'}.csv`);
-    toast({ title: "Export Successful", description: `Data exported to ${databaseName || 'biometric-data'}.csv` });
+    exportToSql(allRecords, `${databaseName || 'biometric-data'}.sql`);
+    toast({ title: "Export Successful", description: `Data exported to ${databaseName || 'biometric-data'}.sql` });
   };
 
   if (!isClient) return null;

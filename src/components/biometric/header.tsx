@@ -27,7 +27,7 @@ export function Header({ databaseName, onExport, recordCount }: HeaderProps) {
           </div>
           <Button onClick={onExport} disabled={recordCount === 0}>
             <Download className="mr-2" />
-            Export to CSV
+            Export to SQL
           </Button>
         </div>
       </div>
