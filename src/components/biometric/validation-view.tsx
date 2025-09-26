@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Save, Undo2, CheckCircle } from "lucide-react";
+import { Save, Undo2, CheckCircle, File } from "lucide-react";
 import type { CapturedDataSet } from "@/lib/types";
 import { CAPTURE_STEPS } from "@/lib/constants";
 
@@ -48,14 +48,21 @@ export function ValidationView({ captureData, onSave, onDiscard }: ValidationVie
                 <div className="relative aspect-[3/2] w-full overflow-hidden rounded-lg border">
                   {image ? (
                     <>
-                      <Image
-                        src={image.url}
-                        alt={`Captured ${step.title}`}
-                        fill
-                        className="object-cover"
-                        data-ai-hint="fingerprint photo"
-                      />
-                      {image.device === 'camera' && (
+                      {image.isBinary ? (
+                        <div className="flex flex-col items-center justify-center h-full bg-muted text-center p-2">
+                          <File className="w-10 h-10 text-muted-foreground mb-2" />
+                          <p className="text-xs font-semibold text-foreground truncate w-full px-1">{image.fileName}</p>
+                        </div>
+                      ) : (
+                        <Image
+                          src={image.url}
+                          alt={`Captured ${step.title}`}
+                          fill
+                          className="object-cover"
+                          data-ai-hint="fingerprint photo"
+                        />
+                      )}
+                      {image.device === 'camera' && !image.isBinary && (
                         <div className={`absolute top-2 right-2 p-1 rounded-full bg-background/80 ${isGoodQuality ? 'text-green-500' : 'text-red-500'}`}>
                           <CheckCircle className="h-5 w-5" />
                         </div>

@@ -72,7 +72,7 @@ export function AppShell() {
     });
   };
 
-  const processImage = async (dataUri: string, device: 'camera' | 'scanner') => {
+  const processImage = async (dataUri: string, device: 'camera' | 'scanner', isBinary: boolean = false, fileName?: string) => {
     if (!currentCaptureData) return;
     const currentStep = CAPTURE_STEPS[currentStepIndex];
 
@@ -81,12 +81,14 @@ export function AppShell() {
       stepId: currentStep.id,
       url: dataUri,
       dataUri,
-      feedbackLoading: device === 'camera', // Only show loading for camera
+      feedbackLoading: device === 'camera' && !isBinary, // Only show loading for camera images
       device,
+      isBinary,
+      fileName,
     };
     setCurrentCaptureData({ ...currentCaptureData, images: updatedImages });
 
-    if (device === 'camera') {
+    if (device === 'camera' && !isBinary) {
       let feedback = null;
       try {
         feedback = await getImageQualityFeedback({ photoDataUri: dataUri });
@@ -132,11 +134,23 @@ export function AppShell() {
     const currentStep = CAPTURE_STEPS[currentStepIndex];
     if (!currentCaptureData || !currentStep) return;
 
+    const isBinary = file.type === 'application/octet-stream' || file.name.endsWith('.bin');
+
     const reader = new FileReader();
     reader.onload = (e) => {
         const dataUri = e.target?.result as string;
         if (dataUri) {
-          processImage(dataUri, currentStep.device);
+          if (isBinary) {
+            processImage(dataUri, 'scanner', true, file.name);
+          } else if (file.type.startsWith('image/')) {
+            processImage(dataUri, currentStep.device);
+          } else {
+             toast({
+                variant: "destructive",
+                title: "Unsupported File Type",
+                description: "Please upload an image or .bin file.",
+            });
+          }
         }
     };
     reader.onerror = () => {

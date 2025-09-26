@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Camera, Check, RefreshCw, Loader2, Sparkles, ThumbsDown, ThumbsUp, VideoOff, Upload } from "lucide-react";
+import { Camera, Check, RefreshCw, Loader2, Sparkles, ThumbsDown, ThumbsUp, VideoOff, Upload, File, Fingerprint } from "lucide-react";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 import type { CaptureStep, CapturedImage } from "@/lib/types";
 import { Input } from "../ui/input";
@@ -84,6 +84,15 @@ function CapturePreview({ step, capturedImage, videoRef, hasCameraPermission }: 
     const placeholderUrl = getPlaceholderImage(step.previewId)?.imageUrl ?? "/placeholder.svg";
 
     if (capturedImage) {
+        if (capturedImage.isBinary) {
+            return (
+                <div className="flex flex-col items-center justify-center h-full bg-muted text-center p-4">
+                    <File className="w-16 h-16 text-muted-foreground mb-4" />
+                    <h3 className="font-semibold text-foreground">Binary File Uploaded</h3>
+                    <p className="text-sm text-muted-foreground">{capturedImage.fileName}</p>
+                </div>
+            );
+        }
         return <Image src={capturedImage.url} alt="Captured image" fill className="object-cover" />;
     }
 
@@ -110,15 +119,15 @@ function CapturePreview({ step, capturedImage, videoRef, hasCameraPermission }: 
         <>
             <Image src={placeholderUrl} alt="Scanner placeholder" fill className="object-cover opacity-20" data-ai-hint="fingerprint scan" />
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-                <Upload className="w-12 h-12 text-muted-foreground mb-4" />
-                <p className="font-semibold text-foreground">Upload Fingerprint Image</p>
-                <p className="text-sm text-muted-foreground">Select an image file from your device.</p>
+                <Fingerprint className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="font-semibold text-foreground">Upload Fingerprint Data</p>
+                <p className="text-sm text-muted-foreground">Select an image or .bin file from your device.</p>
             </div>
         </>
     );
 }
 
-function FileUpload({ onFileUpload, idPrefix }: { onFileUpload: (file: File) => void, idPrefix: string }) {
+function FileUpload({ onFileUpload, idPrefix, accept }: { onFileUpload: (file: File) => void, idPrefix: string, accept: string }) {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,8 +140,8 @@ function FileUpload({ onFileUpload, idPrefix }: { onFileUpload: (file: File) => 
     return (
         <div className="grid w-full max-w-sm items-center gap-1.5">
           <Label htmlFor={`${idPrefix}-upload`}>Upload File</Label>
-          <Input id={`${idPrefix}-upload`} type="file" accept="image/*" onChange={handleFileChange} ref={inputRef} />
-          <p className="text-xs text-muted-foreground">Or upload an image from your device.</p>
+          <Input id={`${idPrefix}-upload`} type="file" accept={accept} onChange={handleFileChange} ref={inputRef} />
+          <p className="text-xs text-muted-foreground">Or upload a file from your device.</p>
         </div>
     );
 }
@@ -150,6 +159,7 @@ export function CaptureView({
 }: CaptureViewProps) {
   const isCameraStep = step.device === 'camera';
   const canCapture = isCameraStep ? hasCameraPermission : true;
+  const fileAccept = isCameraStep ? "image/*" : "image/*,.bin";
 
   return (
     <Card>
@@ -182,10 +192,10 @@ export function CaptureView({
                         <span className="text-xs text-muted-foreground">OR</span>
                         <Separator className="flex-1" />
                     </div>
-                    <FileUpload onFileUpload={onFileUpload} idPrefix="camera" />
+                    <FileUpload onFileUpload={onFileUpload} idPrefix="camera" accept={fileAccept} />
                 </div>
             ) : (
-                <FileUpload onFileUpload={onFileUpload} idPrefix="scanner" />
+                <FileUpload onFileUpload={onFileUpload} idPrefix="scanner" accept={fileAccept} />
             )
           )}
           {capturedImage && <ImageQualityCard image={capturedImage} />}

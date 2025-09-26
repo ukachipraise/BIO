@@ -25,6 +25,8 @@ export type CapturedImage = {
   qualityFeedback?: ImageQualityFeedbackOutput | null;
   feedbackLoading?: boolean;
   device: 'camera' | 'scanner';
+  isBinary?: boolean;
+  fileName?: string;
 };
 
 export type CapturedDataSet = {
