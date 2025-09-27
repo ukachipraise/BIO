@@ -41,16 +41,6 @@ export function AppShell() {
   useEffect(() => {
     setIsClient(true);
     
-    const loadDbs = async () => {
-      if (!user) return;
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-      if (userDoc.exists()) {
-        setExistingDbs(userDoc.data().databases || []);
-      }
-    };
-    loadDbs();
-
     const initializeApp = async () => {
       let cameraConnected = false;
       try {
@@ -83,8 +73,25 @@ export function AppShell() {
 
     initializeApp();
 
-  }, [toast, user]);
+  }, [toast]);
   
+  useEffect(() => {
+    const loadDbs = async () => {
+      if (!user) return;
+      const userDocRef = doc(db, 'users', user.uid);
+      try {
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          setExistingDbs(userDoc.data().databases || []);
+        }
+      } catch (error) {
+        console.error("Failed to load databases from Firestore:", error);
+        toast({ variant: 'destructive', title: "Database Error", description: "Could not load existing databases."});
+      }
+    };
+    loadDbs();
+  }, [user, toast]);
+
   const handleGetStarted = () => {
     setShowLanding(false);
   };
@@ -99,7 +106,10 @@ export function AppShell() {
   };
 
   const handleSaveDb = async (name: string) => {
-    if (!user) return;
+    if (!user) {
+        toast({ variant: 'destructive', title: "Authentication Error", description: "You must be logged in to save a database."});
+        return;
+    }
     if (!existingDbs.includes(name)) {
       const updatedDbs = [...existingDbs, name];
       setExistingDbs(updatedDbs);
