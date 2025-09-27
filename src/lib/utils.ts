@@ -220,7 +220,7 @@ export function exportToIpynb(data: CapturedDataSet[], fileName: string) {
         metadata: {},
         source: [
           "## Convert to Pandas DataFrame\n\n",
-          "For easier analysis, we can flatten the data into a Pandas DataFrame."
+          "For easier analysis, we can flatten the data into a Pandas DataFrame with the requested columns."
         ]
       },
       {
@@ -229,25 +229,17 @@ export function exportToIpynb(data: CapturedDataSet[], fileName: string) {
         metadata: {},
         outputs: [],
         source: [
-          "flattened_data = []\n",
+          "wide_data = []\n",
           "for record in records:\n",
-          "    for step_id, image_data in record['images'].items():\n",
-          "        flat_record = {\n",
-          "            'record_id': record['id'],\n",
-          "            'timestamp': record['timestamp'],\n",
-          "            'step_id': image_data.get('stepId'),\n",
-          "            'device': image_data.get('device'),\n",
-          "            'is_binary': image_data.get('isBinary', False),\n",
-          "            'file_name': image_data.get('fileName'),\n",
-          "            'quality_score': image_data.get('qualityFeedback', {}).get('qualityScore'),\n",
-          "            'blur_level': image_data.get('qualityFeedback', {}).get('blurLevel'),\n",
-          "            'lighting_condition': image_data.get('qualityFeedback', {}).get('lightingCondition'),\n",
-          "            'feedback': image_data.get('qualityFeedback', {}).get('feedback'),\n",
-          "            # Data URI is kept for access but not for direct display in DataFrame\n",
-          "            'data_uri_len': len(image_data.get('dataUri', ''))\n",
-          "        }\n",
-          "        flattened_data.append(flat_record)\n\n",
-          "df = pd.DataFrame(flattened_data)\n\n",
+          "    row = {\n",
+          "        'date': record['timestamp'],\n",
+          "        'Photo index': record['images'].get('CAMERA_INDEX', {}).get('dataUri', None),\n",
+          "        'scanned index': record['images'].get('SCANNER_INDEX', {}).get('dataUri', None),\n",
+          "        'photo thumb': record['images'].get('CAMERA_THUMB', {}).get('dataUri', None),\n",
+          "        'scanned thumb': record['images'].get('SCANNER_THUMB', {}).get('dataUri', None),\n",
+          "    }\n",
+          "    wide_data.append(row)\n\n",
+          "df = pd.DataFrame(wide_data)\n\n",
           "display(df)"
         ]
       }
