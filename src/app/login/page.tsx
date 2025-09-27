@@ -28,11 +28,31 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   const handleAuthAction = async () => {
+    if (isSignUp) {
+      if (password !== confirmPassword) {
+        toast({
+          variant: 'destructive',
+          title: 'Passwords Do Not Match',
+          description: 'Please make sure your passwords match.',
+        });
+        return;
+      }
+      if (password.length < 6) {
+        toast({
+            variant: 'destructive',
+            title: 'Password Too Short',
+            description: 'Your password must be at least 6 characters long.',
+        });
+        return;
+      }
+    }
+
     try {
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
@@ -90,7 +110,7 @@ export default function LoginPage() {
           </div>
           <Card>
             <CardHeader>
-              <CardTitle>{isSignUp ? 'Sign Up' : 'Login'}</CardTitle>
+              <CardTitle>{isSignUp ? 'Create an Account' : 'Login'}</CardTitle>
               <CardDescription>
                 {isSignUp
                   ? 'Create an account to start capturing data.'
@@ -105,7 +125,18 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                 {isSignUp && (
+                  <p className="text-xs text-muted-foreground pt-1">
+                    Password must be at least 6 characters long.
+                  </p>
+                )}
               </div>
+              {isSignUp && (
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
               <Button className="w-full" onClick={handleAuthAction}>
@@ -129,3 +160,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
