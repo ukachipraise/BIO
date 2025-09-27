@@ -90,16 +90,26 @@ export function AppShell() {
     setDatabaseName(name);
     toast({ title: "Database Ready", description: `Connected to ${name}.` });
     
-    if (isNew && !existingDbs.includes(name)) {
+    if (isNew) {
+      handleSaveDb(name);
+    }
+  };
+
+  const handleSaveDb = (name: string) => {
+    if (!existingDbs.includes(name)) {
       const updatedDbs = [...existingDbs, name];
       setExistingDbs(updatedDbs);
       try {
         localStorage.setItem(DB_LIST_KEY, JSON.stringify(updatedDbs));
+        toast({ title: "Database Saved", description: `"${name}" is now available in existing databases.` });
       } catch (error) {
         console.error("Failed to save databases to localStorage:", error);
+        toast({ variant: 'destructive', title: "Error", description: "Could not save database."});
       }
+    } else {
+        toast({ variant: 'default', title: "Database Exists", description: `"${name}" is already in your list of databases.` });
     }
-  };
+  }
 
   const handleGoBack = () => {
     setDatabaseName(null);
@@ -272,7 +282,7 @@ export function AppShell() {
 
   if (!isClient || isInitializing) return <LoadingView />;
   if (showLanding) return <LandingPage onGetStarted={handleGetStarted} />;
-  if (!databaseName) return <DatabaseDialog onDbSelect={handleDbSelect} existingDbs={existingDbs} />;
+  if (!databaseName) return <DatabaseDialog onDbSelect={handleDbSelect} onDbSave={handleSaveDb} existingDbs={existingDbs} />;
 
   const currentStep = CAPTURE_STEPS[currentStepIndex];
   const capturedImage = currentCaptureData?.images[currentStep?.id as CaptureStepId];
@@ -321,5 +331,3 @@ export function AppShell() {
     </div>
   );
 }
-
-    

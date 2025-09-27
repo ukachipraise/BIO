@@ -13,20 +13,29 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Database, FolderPlus } from 'lucide-react';
+import { Database, FolderPlus, Save } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface DatabaseDialogProps {
   onDbSelect: (name: string, isNew: boolean) => void;
+  onDbSave: (name: string) => void;
   existingDbs: string[];
 }
 
-export function DatabaseDialog({ onDbSelect, existingDbs }: DatabaseDialogProps) {
+export function DatabaseDialog({ onDbSelect, onDbSave, existingDbs }: DatabaseDialogProps) {
   const [dbName, setDbName] = useState(`session-${new Date().toISOString().split('T')[0]}`);
+  const [activeTab, setActiveTab] = useState('new');
 
-  const handleCreate = () => {
+  const handleCreateAndStart = () => {
     if (dbName.trim()) {
       onDbSelect(dbName.trim(), true);
+    }
+  };
+
+  const handleSave = () => {
+    if (dbName.trim()) {
+      onDbSave(dbName.trim());
+      setActiveTab('existing');
     }
   };
 
@@ -41,7 +50,7 @@ export function DatabaseDialog({ onDbSelect, existingDbs }: DatabaseDialogProps)
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="new" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="new"><FolderPlus className="mr-2 h-4 w-4"/>New Database</TabsTrigger>
               <TabsTrigger value="existing" disabled={existingDbs.length === 0}><Database className="mr-2 h-4 w-4"/>Existing</TabsTrigger>
@@ -55,9 +64,14 @@ export function DatabaseDialog({ onDbSelect, existingDbs }: DatabaseDialogProps)
                   onChange={(e) => setDbName(e.target.value)}
                   placeholder="e.g., project-x-data"
                 />
-                <Button onClick={handleCreate} className="w-full" disabled={!dbName.trim()}>
-                  Start New Session
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button onClick={handleSave} variant="outline" className="w-full" disabled={!dbName.trim()}>
+                    <Save className="mr-2 h-4 w-4" /> Save Database
+                  </Button>
+                  <Button onClick={handleCreateAndStart} className="w-full" disabled={!dbName.trim()}>
+                    Create & Save Session
+                  </Button>
+                </div>
               </div>
             </TabsContent>
             <TabsContent value="existing" className="py-4">
@@ -86,5 +100,3 @@ export function DatabaseDialog({ onDbSelect, existingDbs }: DatabaseDialogProps)
     </div>
   );
 }
-
-    
