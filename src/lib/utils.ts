@@ -184,7 +184,7 @@ export function exportToIpynb(data: CapturedDataSet[], fileName: string) {
         metadata: {},
         source: [
           "## Helper Functions for Data Conversion and Display\n\n",
-          "These functions help decode the `data URI` strings into viewable images. The most important function, `binary_to_image`, demonstrates how raw binary data can be converted into an image. **Note:** This requires making assumptions about the image dimensions, as this information is not present in raw binary files."
+          "These functions help decode the `data URI` strings into viewable images."
         ]
       },
       {
@@ -198,40 +198,14 @@ export function exportToIpynb(data: CapturedDataSet[], fileName: string) {
           "    if not data_uri or ';base64,' not in data_uri:\n",
           "        return None\n",
           "    return base64.b64decode(data_uri.split(',')[1])\n\n",
-          "def binary_to_image(binary_data, width=256, height=256):\n",
-          "    \"\"\"Converts raw binary data to a Pillow Image object, assuming dimensions.\"\"\"\n",
-          "    if not binary_data:\n",
-          "        return None\n",
-          "    \n",
-          "    # Assume 8 bits per pixel (grayscale)\n",
-          "    expected_size = width * height\n",
-          "    if len(binary_data) < expected_size:\n",
-          "        print(f\"Warning: Binary data is smaller than expected. Padding with zeros.\")\n",
-          "        padding = bytes(expected_size - len(binary_data))\n",
-          "        binary_data += padding\n",
-          "    elif len(binary_data) > expected_size:\n",
-          "        print(f\"Warning: Binary data is larger than expected. Truncating.\")\n",
-          "        binary_data = binary_data[:expected_size]\n",
-          "        \n",
-          "    try:\n",
-          "        # Create a grayscale image from the binary data\n",
-          "        img = PILImage.frombytes('L', (width, height), binary_data)\n",
-          "        return img\n",
-          "    except Exception as e:\n",
-          "        print(f\"Error converting binary to image: {e}\")\n",
-          "        return None\n\n",
           "def display_image(image_data):\n",
-          "    \"\"\"Displays an image from either a data URI or a Pillow Image object.\"\"\"\n",
+          "    \"\"\"Displays an image from a data URI.\"\"\"\n",
           "    if isinstance(image_data, str) and image_data.startswith('data:image'):\n",
           "        display(Image(data=data_uri_to_binary(image_data)))\n",
-          "    elif isinstance(image_data, PILImage.Image):\n",
-          "        plt.imshow(image_data, cmap='gray')\n",
-          "        plt.axis('off')\n",
-          "        plt.show()\n",
           "    elif image_data is None:\n",
           "        print(\"No image data to display.\")\n",
           "    else:\n",
-          "        print(f\"Cannot display data of type: {type(image_data)}\")"
+          "        print(f\"Cannot display data of type: {type(image_data)}. It might be raw binary.\")"
         ]
       },
        {
@@ -239,7 +213,7 @@ export function exportToIpynb(data: CapturedDataSet[], fileName: string) {
         metadata: {},
         source: [
           "## Convert to Pandas DataFrame\n\n",
-          "For easier analysis, we can flatten the data into a Pandas DataFrame. The 'scanned' columns will be converted from binary data to image objects."
+          "For easier analysis, we can flatten the data into a Pandas DataFrame."
         ]
       },
       {
@@ -250,17 +224,13 @@ export function exportToIpynb(data: CapturedDataSet[], fileName: string) {
         source: [
           "wide_data = []\n",
           "for record in records:\n",
-          "    # For scanned data, convert from binary data URI to a Pillow image object\n",
-          "    scanned_index_bin = data_uri_to_binary(record['images'].get('SCANNER_INDEX', {}).get('dataUri', None))\n",
-          "    scanned_thumb_bin = data_uri_to_binary(record['images'].get('SCANNER_THUMB', {}).get('dataUri', None))\n",
-          "    \n",
           "    row = {\n",
           "        'id': record['id'],\n",
           "        'date': record['timestamp'],\n",
           "        'Photo index': record['images'].get('CAMERA_INDEX', {}).get('dataUri', None),\n",
-          "        'scanned index': binary_to_image(scanned_index_bin), # Converted to image object\n",
+          "        'scanned index': record['images'].get('SCANNER_INDEX', {}).get('dataUri', None), # Raw data URI\n",
           "        'photo thumb': record['images'].get('CAMERA_THUMB', {}).get('dataUri', None),\n",
-          "        'scanned thumb': binary_to_image(scanned_thumb_bin), # Converted to image object\n",
+          "        'scanned thumb': record['images'].get('SCANNER_THUMB', {}).get('dataUri', None), # Raw data URI\n",
           "    }\n",
           "    wide_data.append(row)\n\n",
           "df = pd.DataFrame(wide_data)\n\n",
@@ -268,7 +238,7 @@ export function exportToIpynb(data: CapturedDataSet[], fileName: string) {
           "df = df[['id', 'date', 'Photo index', 'scanned index', 'photo thumb', 'scanned thumb']]\n\n",
           "# Show the dataframe info to confirm types\n",
           "df.info()\n\n",
-          "# Display the dataframe. Scanned columns will show as Pillow image objects.\n",
+          "# Display the dataframe. Scanned columns will show the raw data URI.\n",
           "display(df)"
         ]
       },
@@ -277,7 +247,7 @@ export function exportToIpynb(data: CapturedDataSet[], fileName: string) {
         metadata: {},
         source: [
             "## Displaying Images from the DataFrame\n\n",
-            "You can now access any image from the DataFrame and display it. For example, let's display the scanned index finger from the first record."
+            "You can now access any image from the DataFrame and display it. For example, let's display the photo index from the first record."
         ]
       },
       {
@@ -290,8 +260,9 @@ export function exportToIpynb(data: CapturedDataSet[], fileName: string) {
             "    print(\"Displaying Photo Index from first record:\")\n",
             "    display_image(df.iloc[0]['Photo index'])\n",
             "    \n",
-            "    print(\"\\nDisplaying Scanned Index (converted from binary) from first record:\")\n",
-            "    display_image(df.iloc[0]['scanned index'])\n",
+            "    print(\"\\nScanned Index data from first record (raw data URI):\")\n",
+            "    # We can't display this directly as an image without knowing its format\n",
+            "    print(df.iloc[0]['scanned index'][:100] + '...') # Print first 100 chars\n",
             "else:\n",
             "    print(\"DataFrame is empty. No records to display.\")"
         ]
