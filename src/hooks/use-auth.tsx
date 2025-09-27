@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         return () => unsubscribe();
     } else {
+        // If auth is not available (e.g. in server environment), stop loading.
         setLoading(false);
     }
   }, []);
