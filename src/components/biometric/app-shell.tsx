@@ -8,7 +8,7 @@ import { generateUniqueId, exportToSql, exportToCsv, exportToIpynb } from '@/lib
 import { getImageQualityFeedback } from '@/ai/flows/real-time-image-quality-feedback';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/use-auth';
-import { db } from '@/lib/firebase';
+import { getFirestoreDb } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 
@@ -78,6 +78,9 @@ export function AppShell() {
   useEffect(() => {
     const loadDbs = async () => {
       if (!user) return;
+      const db = getFirestoreDb();
+      if (!db) return;
+
       const userDocRef = doc(db, 'users', user.uid);
       try {
         const userDoc = await getDoc(userDocRef);
@@ -110,6 +113,12 @@ export function AppShell() {
         toast({ variant: 'destructive', title: "Authentication Error", description: "You must be logged in to save a database."});
         return;
     }
+    const db = getFirestoreDb();
+    if (!db) {
+        toast({ variant: 'destructive', title: "Database Error", description: "Could not connect to the database."});
+        return;
+    }
+
     if (!existingDbs.includes(name)) {
       const updatedDbs = [...existingDbs, name];
       setExistingDbs(updatedDbs);

@@ -1,7 +1,7 @@
 
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   "projectId": "studio-6906438855-8df19",
@@ -13,18 +13,25 @@ const firebaseConfig = {
 };
 
 let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
 
-if (typeof window !== 'undefined' && !getApps().length) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-} else if (getApps().length > 0) {
-  app = getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
+const getFirebaseApp = () => {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+    if (!getApps().length) {
+        app = initializeApp(firebaseConfig);
+    } else {
+        app = getApp();
+    }
+    return app;
 }
 
-// @ts-ignore
-export { app, auth, db };
+export const getFirebaseAuth = (): Auth | null => {
+    const app = getFirebaseApp();
+    return app ? getAuth(app) : null;
+}
+
+export const getFirestoreDb = (): Firestore | null => {
+    const app = getFirebaseApp();
+    return app ? getFirestore(app) : null;
+}

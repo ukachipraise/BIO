@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword
@@ -24,6 +24,16 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const handleAuthAction = async () => {
+    const auth = getFirebaseAuth();
+    if (!auth) {
+        toast({
+            variant: 'destructive',
+            title: 'Initialization Error',
+            description: 'Firebase is not available. Please try again later.',
+        });
+        return;
+    }
+    
     if (isSignUp) {
       if (password !== confirmPassword) {
         toast({
