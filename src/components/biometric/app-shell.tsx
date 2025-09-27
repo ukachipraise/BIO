@@ -15,11 +15,13 @@ import { WorkflowIdleView } from './workflow-idle-view';
 import { CaptureView } from './capture-view';
 import { ValidationView } from './validation-view';
 import { LoadingView } from './loading-view';
+import { LandingPage } from './landing-page';
 
 const DB_LIST_KEY = 'biometric_capture_databases';
 
 export function AppShell() {
   const [isClient, setIsClient] = useState(false);
+  const [showLanding, setShowLanding] = useState(true);
   const [databaseName, setDatabaseName] = useState<string | null>(null);
   const [existingDbs, setExistingDbs] = useState<string[]>([]);
   const [devices, setDevices] = useState<Device[]>(INITIAL_DEVICES);
@@ -79,6 +81,10 @@ export function AppShell() {
     initializeApp();
 
   }, [toast]);
+  
+  const handleGetStarted = () => {
+    setShowLanding(false);
+  };
 
   const handleDbSelect = (name: string, isNew: boolean) => {
     setDatabaseName(name);
@@ -265,6 +271,7 @@ export function AppShell() {
   };
 
   if (!isClient || isInitializing) return <LoadingView />;
+  if (showLanding) return <LandingPage onGetStarted={handleGetStarted} />;
   if (!databaseName) return <DatabaseDialog onDbSelect={handleDbSelect} existingDbs={existingDbs} />;
 
   const currentStep = CAPTURE_STEPS[currentStepIndex];
@@ -314,3 +321,5 @@ export function AppShell() {
     </div>
   );
 }
+
+    
