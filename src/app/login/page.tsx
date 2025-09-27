@@ -16,7 +16,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Fingerprint } from 'lucide-react';
+import { Fingerprint, LogIn, UserPlus } from 'lucide-react';
+
+const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
+        <title>Google</title>
+        <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.62 1.62-4.55 1.62-3.83 0-6.9-3.1-6.9-6.9s3.07-6.9 6.9-6.9c2.2 0 3.58.88 4.43 1.69l2.5-2.5C18.27 3.2 15.64 2 12.48 2 6.83 2 2.36 6.53 2.36 12.2s4.47 10.2 10.12 10.2c2.93 0 5.31-1 7.02-2.66 1.76-1.69 2.4-4.12 2.4-6.3v-.35H12.48z" />
+    </svg>
+);
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -102,8 +110,12 @@ export default function LoginPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
-                  <Button className="w-full" onClick={() => handleAuthAction('login')}>Login</Button>
-                  <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>Login with Google</Button>
+                  <Button className="w-full" onClick={() => handleAuthAction('login')}>
+                    <LogIn /> Login
+                  </Button>
+                  <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+                    <GoogleIcon className="mr-2 h-4 w-4" /> Login with Google
+                  </Button>
                 </CardFooter>
               </Card>
             </TabsContent>
@@ -124,8 +136,12 @@ export default function LoginPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
-                  <Button className="w-full" onClick={() => handleAuthAction('signup')}>Sign Up</Button>
-                   <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>Sign up with Google</Button>
+                  <Button className="w-full" onClick={() => handleAuthAction('signup')}>
+                    <UserPlus /> Sign Up
+                  </Button>
+                   <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+                    <GoogleIcon className="mr-2 h-4 w-4" /> Sign up with Google
+                   </Button>
                 </CardFooter>
               </Card>
             </TabsContent>
