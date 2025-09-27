@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Fingerprint, LogIn, UserPlus } from 'lucide-react';
 
@@ -29,15 +28,16 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleAuthAction = async (action: 'login' | 'signup') => {
+  const handleAuthAction = async () => {
     try {
-      if (action === 'login') {
-        await signInWithEmailAndPassword(auth, email, password);
-      } else {
+      if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
       }
       router.push('/');
     } catch (error: any) {
@@ -88,64 +88,42 @@ export default function LoginPage() {
               Biometric Capture Pro
             </h1>
           </div>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            <TabsContent value="login">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Login</CardTitle>
-                  <CardDescription>Enter your credentials to access your account.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="m@example.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
-                    <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col gap-4">
-                  <Button className="w-full" onClick={() => handleAuthAction('login')}>
-                    <LogIn /> Login
-                  </Button>
-                  <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
-                    <GoogleIcon className="mr-2 h-4 w-4" /> Login with Google
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            <TabsContent value="signup">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sign Up</CardTitle>
-                  <CardDescription>Create an account to start capturing data.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="m@example.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input id="signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col gap-4">
-                  <Button className="w-full" onClick={() => handleAuthAction('signup')}>
-                    <UserPlus /> Sign Up
-                  </Button>
-                   <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
-                    <GoogleIcon className="mr-2 h-4 w-4" /> Sign up with Google
-                   </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          <Card>
+            <CardHeader>
+              <CardTitle>{isSignUp ? 'Sign Up' : 'Login'}</CardTitle>
+              <CardDescription>
+                {isSignUp
+                  ? 'Create an account to start capturing data.'
+                  : 'Enter your credentials to access your account.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="m@example.com" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4">
+              <Button className="w-full" onClick={handleAuthAction}>
+                {isSignUp ? <UserPlus /> : <LogIn />}
+                {isSignUp ? 'Sign Up' : 'Login'}
+              </Button>
+              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+                <GoogleIcon className="mr-2 h-4 w-4" />
+                {isSignUp ? 'Sign up with Google' : 'Login with Google'}
+              </Button>
+               <p className="text-center text-sm text-muted-foreground">
+                {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+                <Button variant="link" onClick={() => setIsSignUp(!isSignUp)}>
+                  {isSignUp ? 'Login' : 'Sign Up'}
+                </Button>
+              </p>
+            </CardFooter>
+          </Card>
         </div>
       </div>
     </div>
