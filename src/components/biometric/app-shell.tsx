@@ -224,28 +224,46 @@ export function AppShell() {
     setCurrentCaptureData({ ...currentCaptureData, images: restImages });
   };
   
+  const saveSessionToLocalStorage = () => {
+    if (!databaseName) return;
+    
+    const newSavedDbs = { ...savedDatabases, [databaseName]: allRecords };
+    setSavedDatabases(newSavedDbs);
+    try {
+      localStorage.setItem('biometric-databases', JSON.stringify(newSavedDbs));
+      return true;
+    } catch (error) {
+      console.error("Failed to save to localStorage", error);
+      toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save session to local storage.' });
+      return false;
+    }
+  };
+
   const handleSaveRecord = () => {
     if (!currentCaptureData || !databaseName) return;
     
     const updatedRecords = [...allRecords, currentCaptureData];
     setAllRecords(updatedRecords);
 
-    const newSavedDbs = { ...savedDatabases, [databaseName]: updatedRecords };
-    setSavedDatabases(newSavedDbs);
-    try {
-      localStorage.setItem('biometric-databases', JSON.stringify(newSavedDbs));
-      toast({
+    const success = saveSessionToLocalStorage();
+    
+    if (success) {
+       toast({
         title: "Record Saved",
         description: `Data for ID ${currentCaptureData.id} has been saved successfully to session '${databaseName}'.`,
       });
-    } catch (error) {
-      console.error("Failed to save to localStorage", error);
-      toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save session to local storage.' });
     }
     
     handleResetWorkflow();
   };
 
+  const handleSaveSession = () => {
+    const success = saveSessionToLocalStorage();
+    if (success) {
+      toast({ title: 'Session Saved', description: `Your current session '${databaseName}' has been saved.` });
+    }
+  };
+  
   const handleResetWorkflow = () => {
     setWorkflowStatus('IDLE');
     setCurrentStepIndex(0);
@@ -305,7 +323,8 @@ export function AppShell() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header 
-        databaseName={databaseName} 
+        databaseName={databaseName}
+        onSaveSession={handleSaveSession}
         onExport={handleExport} 
         recordCount={allRecords.length} 
         onGoBack={handleGoBack}

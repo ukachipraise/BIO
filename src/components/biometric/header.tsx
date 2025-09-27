@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Fingerprint, Download, ChevronDown, ArrowLeft } from "lucide-react";
+import { Fingerprint, Download, ChevronDown, ArrowLeft, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,12 +12,13 @@ import {
 
 interface HeaderProps {
   databaseName: string;
+  onSaveSession: () => void;
   onExport: (format: 'sql' | 'csv' | 'ipynb') => void;
   recordCount: number;
   onGoBack: () => void;
 }
 
-export function Header({ databaseName, onExport, recordCount, onGoBack }: HeaderProps) {
+export function Header({ databaseName, onSaveSession, onExport, recordCount, onGoBack }: HeaderProps) {
   return (
     <header className="sticky top-0 z-10 w-full border-b bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-8">
@@ -33,11 +34,15 @@ export function Header({ databaseName, onExport, recordCount, onGoBack }: Header
             </h1>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-medium">{databaseName}</p>
             <p className="text-xs text-muted-foreground">{recordCount} records saved</p>
           </div>
+          <Button variant="outline" onClick={onSaveSession}>
+            <Save className="mr-2 h-4 w-4" />
+            Save Session
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button disabled={recordCount === 0}>
