@@ -17,10 +17,13 @@ import { ValidationView } from './validation-view';
 import { LoadingView } from './loading-view';
 import { LandingPage } from './landing-page';
 
+type SavedDatabases = Record<string, CapturedDataSet[]>;
+
 export function AppShell() {
   const [isClient, setIsClient] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [databaseName, setDatabaseName] = useState<string | null>(null);
+  const [savedDatabases, setSavedDatabases] = useState<SavedDatabases>({});
   const [devices, setDevices] = useState<Device[]>(INITIAL_DEVICES);
   const [allRecords, setAllRecords] = useState<CapturedDataSet[]>([]);
   const [workflowStatus, setWorkflowStatus] = useState<WorkflowStatus>('IDLE');
@@ -35,6 +38,17 @@ export function AppShell() {
   useEffect(() => {
     setIsClient(true);
     
+    // Load saved databases from localStorage
+    try {
+      const saved = localStorage.getItem('biometric-databases');
+      if (saved) {
+        setSavedDatabases(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error("Failed to load databases from localStorage", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not load saved sessions.' });
+    }
+
     const initializeApp = async () => {
       let cameraConnected = false;
       try {
@@ -75,7 +89,23 @@ export function AppShell() {
 
   const handleDbSelect = (name: string) => {
     setDatabaseName(name);
-    toast({ title: "Database Ready", description: `Connected to ${name}.` });
+    // If it's a new DB, allRecords is empty. If existing, load it.
+    const existingRecords = savedDatabases[name] || [];
+    setAllRecords(existingRecords);
+    toast({ title: "Database Ready", description: `Session '${name}' started.` });
+  };
+
+  const handleDeleteDb = (name: string) => {
+    const newSavedDbs = { ...savedDatabases };
+    delete newSavedDbs[name];
+    setSavedDatabases(newSavedDbs);
+    try {
+      localStorage.setItem('biometric-databases', JSON.stringify(newSavedDbs));
+      toast({ title: 'Session Deleted', description: `Session '${name}' has been removed.` });
+    } catch (error) {
+      console.error("Failed to save databases to localStorage", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not update saved sessions.' });
+    }
   };
 
   const handleGoBack = () => {
@@ -195,12 +225,24 @@ export function AppShell() {
   };
   
   const handleSaveRecord = () => {
-    if (!currentCaptureData) return;
-    setAllRecords(prev => [...prev, currentCaptureData]);
-    toast({
-      title: "Record Saved",
-      description: `Data for ID ${currentCaptureData.id} has been saved successfully.`,
-    });
+    if (!currentCaptureData || !databaseName) return;
+    
+    const updatedRecords = [...allRecords, currentCaptureData];
+    setAllRecords(updatedRecords);
+
+    const newSavedDbs = { ...savedDatabases, [databaseName]: updatedRecords };
+    setSavedDatabases(newSavedDbs);
+    try {
+      localStorage.setItem('biometric-databases', JSON.stringify(newSavedDbs));
+      toast({
+        title: "Record Saved",
+        description: `Data for ID ${currentCaptureData.id} has been saved successfully to session '${databaseName}'.`,
+      });
+    } catch (error) {
+      console.error("Failed to save to localStorage", error);
+      toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save session to local storage.' });
+    }
+    
     handleResetWorkflow();
   };
 
@@ -253,7 +295,9 @@ export function AppShell() {
 
   if (!isClient || isInitializing) return <LoadingView />;
   if (showLanding) return <LandingPage onGetStarted={handleGetStarted} />;
-  if (!databaseName) return <DatabaseDialog onDbSelect={handleDbSelect} onCancel={handleCancelDbSelect} />;
+  if (!databaseName) {
+    return <DatabaseDialog onDbSelect={handleDbSelect} onCancel={handleCancelDbSelect} savedDbs={Object.keys(savedDatabases)} onDeleteDb={handleDeleteDb} />;
+  }
 
   const currentStep = CAPTURE_STEPS[currentStepIndex];
   const capturedImage = currentCaptureData?.images[currentStep?.id as CaptureStepId];
@@ -302,3 +346,5 @@ export function AppShell() {
     </div>
   );
 }
+
+    
