@@ -14,9 +14,12 @@ import { WorkflowIdleView } from './workflow-idle-view';
 import { CaptureView } from './capture-view';
 import { ValidationView } from './validation-view';
 
+const DB_LIST_KEY = 'biometric_capture_databases';
+
 export function AppShell() {
   const [isClient, setIsClient] = useState(false);
   const [databaseName, setDatabaseName] = useState<string | null>(null);
+  const [existingDbs, setExistingDbs] = useState<string[]>([]);
   const [devices, setDevices] = useState<Device[]>(INITIAL_DEVICES);
   const [allRecords, setAllRecords] = useState<CapturedDataSet[]>([]);
   const [workflowStatus, setWorkflowStatus] = useState<WorkflowStatus>('IDLE');
@@ -29,6 +32,17 @@ export function AppShell() {
 
   useEffect(() => {
     setIsClient(true);
+    
+    // Load existing databases from localStorage
+    try {
+      const savedDbs = localStorage.getItem(DB_LIST_KEY);
+      if (savedDbs) {
+        setExistingDbs(JSON.parse(savedDbs));
+      }
+    } catch (error) {
+      console.error("Failed to load databases from localStorage:", error);
+    }
+    
     const getCameraPermission = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -57,9 +71,19 @@ export function AppShell() {
 
   }, [toast]);
 
-  const handleDbSelect = (name: string) => {
+  const handleDbSelect = (name: string, isNew: boolean) => {
     setDatabaseName(name);
     toast({ title: "Database Ready", description: `Connected to ${name}.` });
+    
+    if (isNew && !existingDbs.includes(name)) {
+      const updatedDbs = [...existingDbs, name];
+      setExistingDbs(updatedDbs);
+      try {
+        localStorage.setItem(DB_LIST_KEY, JSON.stringify(updatedDbs));
+      } catch (error) {
+        console.error("Failed to save databases to localStorage:", error);
+      }
+    }
   };
 
   const handleStartCapture = () => {
@@ -226,7 +250,7 @@ export function AppShell() {
   };
 
   if (!isClient) return null;
-  if (!databaseName) return <DatabaseDialog onDbSelect={handleDbSelect} />;
+  if (!databaseName) return <DatabaseDialog onDbSelect={handleDbSelect} existingDbs={existingDbs} />;
 
   const currentStep = CAPTURE_STEPS[currentStepIndex];
   const capturedImage = currentCaptureData?.images[currentStep?.id as CaptureStepId];

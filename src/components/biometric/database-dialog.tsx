@@ -16,16 +16,16 @@ import { Database, FolderPlus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface DatabaseDialogProps {
-  onDbSelect: (name: string) => void;
+  onDbSelect: (name: string, isNew: boolean) => void;
+  existingDbs: string[];
 }
 
-export function DatabaseDialog({ onDbSelect }: DatabaseDialogProps) {
+export function DatabaseDialog({ onDbSelect, existingDbs }: DatabaseDialogProps) {
   const [dbName, setDbName] = useState(`session-${new Date().toISOString().split('T')[0]}`);
-  const existingDbs = ['previous-session-1', 'project-alpha-data', 'test-run-007'];
 
   const handleCreate = () => {
     if (dbName.trim()) {
-      onDbSelect(dbName.trim());
+      onDbSelect(dbName.trim(), true);
     }
   };
 
@@ -42,7 +42,7 @@ export function DatabaseDialog({ onDbSelect }: DatabaseDialogProps) {
         <Tabs defaultValue="new" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="new"><FolderPlus className="mr-2 h-4 w-4"/>New Database</TabsTrigger>
-            <TabsTrigger value="existing"><Database className="mr-2 h-4 w-4"/>Existing</TabsTrigger>
+            <TabsTrigger value="existing" disabled={existingDbs.length === 0}><Database className="mr-2 h-4 w-4"/>Existing</TabsTrigger>
           </TabsList>
           <TabsContent value="new" className="py-4">
             <div className="space-y-4">
@@ -60,18 +60,22 @@ export function DatabaseDialog({ onDbSelect }: DatabaseDialogProps) {
           </TabsContent>
           <TabsContent value="existing" className="py-4">
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Select a simulated existing database:</p>
-              <div className="max-h-48 overflow-y-auto rounded-md border">
-                {existingDbs.map(db => (
-                  <button 
-                    key={db}
-                    onClick={() => onDbSelect(db)}
-                    className="w-full text-left p-2 text-sm hover:bg-accent focus:bg-accent focus:outline-none"
-                  >
-                    {db}
-                  </button>
-                ))}
-              </div>
+              <p className="text-sm text-muted-foreground">Select a previously created database:</p>
+              {existingDbs.length > 0 ? (
+                <div className="max-h-48 overflow-y-auto rounded-md border">
+                  {existingDbs.map(db => (
+                    <button 
+                      key={db}
+                      onClick={() => onDbSelect(db, false)}
+                      className="w-full text-left p-2 text-sm hover:bg-accent focus:bg-accent focus:outline-none"
+                    >
+                      {db}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-center text-muted-foreground py-4">No existing databases found.</p>
+              )}
             </div>
           </TabsContent>
         </Tabs>
