@@ -1,9 +1,10 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFirebaseAuth } from '@/lib/firebase';
+import type { Auth } from 'firebase/auth';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword
@@ -22,9 +23,13 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const [auth, setAuth] = useState<Auth | null>(null);
+
+  useEffect(() => {
+    setAuth(getFirebaseAuth());
+  }, []);
 
   const handleAuthAction = async () => {
-    const auth = getFirebaseAuth();
     if (!auth) {
         toast({
             variant: 'destructive',
