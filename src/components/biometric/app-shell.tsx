@@ -117,6 +117,10 @@ export function AppShell() {
     handleResetWorkflow();
   };
 
+  const handleCancelDbSelect = () => {
+    setShowLanding(true);
+  };
+
   const handleStartCapture = () => {
     setWorkflowStatus('CAPTURING');
     setCurrentStepIndex(0);
@@ -282,7 +286,7 @@ export function AppShell() {
 
   if (!isClient || isInitializing) return <LoadingView />;
   if (showLanding) return <LandingPage onGetStarted={handleGetStarted} />;
-  if (!databaseName) return <DatabaseDialog onDbSelect={handleDbSelect} onDbSave={handleSaveDb} existingDbs={existingDbs} />;
+  if (!databaseName) return <DatabaseDialog onDbSelect={handleDbSelect} onDbSave={handleSaveDb} existingDbs={existingDbs} onCancel={handleCancelDbSelect} />;
 
   const currentStep = CAPTURE_STEPS[currentStepIndex];
   const capturedImage = currentCaptureData?.images[currentStep?.id as CaptureStepId];

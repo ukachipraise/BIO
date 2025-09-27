@@ -13,16 +13,17 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Database, FolderPlus, Save } from 'lucide-react';
+import { Database, FolderPlus, Save, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface DatabaseDialogProps {
   onDbSelect: (name: string, isNew: boolean) => void;
   onDbSave: (name: string) => void;
   existingDbs: string[];
+  onCancel: () => void;
 }
 
-export function DatabaseDialog({ onDbSelect, onDbSave, existingDbs }: DatabaseDialogProps) {
+export function DatabaseDialog({ onDbSelect, onDbSave, existingDbs, onCancel }: DatabaseDialogProps) {
   const [dbName, setDbName] = useState(`session-${new Date().toISOString().split('T')[0]}`);
   const [activeTab, setActiveTab] = useState('new');
 
@@ -41,7 +42,7 @@ export function DatabaseDialog({ onDbSelect, onDbSave, existingDbs }: DatabaseDi
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Dialog open={true}>
+      <Dialog open={true} onOpenChange={(open) => !open && onCancel()}>
         <DialogContent className="sm:max-w-[480px] grid-rows-[auto_1fr_auto]">
           <DialogHeader>
             <DialogTitle>Database Setup</DialogTitle>
@@ -95,6 +96,12 @@ export function DatabaseDialog({ onDbSelect, onDbSave, existingDbs }: DatabaseDi
               </div>
             </TabsContent>
           </Tabs>
+           <DialogFooter>
+            <Button variant="outline" onClick={onCancel}>
+              <X className="mr-2 h-4 w-4" />
+              Cancel
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
