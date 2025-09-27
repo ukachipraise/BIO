@@ -16,7 +16,6 @@ import { Label } from '@/components/ui/label';
 import { FolderPlus, Trash2, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from '../ui/scroll-area';
-import { Separator } from '../ui/separator';
 
 interface DatabaseDialogProps {
   onDbSelect: (name: string) => void;
@@ -26,7 +25,7 @@ interface DatabaseDialogProps {
 }
 
 export function DatabaseDialog({ onDbSelect, onCancel, savedDbs, onDeleteDb }: DatabaseDialogProps) {
-  const [dbName, setDbName] = useState(`session-${new Date().toISOString().split('T')[0]}`);
+  const [dbName, setDbName] = useState(`database-${new Date().toISOString().split('T')[0]}`);
   const [activeTab, setActiveTab] = useState(savedDbs.length > 0 ? "resume" : "new");
 
   const handleCreateAndStart = () => {
@@ -40,20 +39,20 @@ export function DatabaseDialog({ onDbSelect, onCancel, savedDbs, onDeleteDb }: D
       <Dialog open={true} onOpenChange={(open) => !open && onCancel()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Session Setup</DialogTitle>
+            <DialogTitle>Database Setup</DialogTitle>
             <DialogDescription>
-              Create a new session or resume a previously saved one.
+              Create a new database or resume a previously saved one.
             </DialogDescription>
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="resume" disabled={savedDbs.length === 0}>Resume Session</TabsTrigger>
-              <TabsTrigger value="new">New Session</TabsTrigger>
+              <TabsTrigger value="resume" disabled={savedDbs.length === 0}>Resume Database</TabsTrigger>
+              <TabsTrigger value="new">New Database</TabsTrigger>
             </TabsList>
             <TabsContent value="resume" className="mt-4">
               <div className="space-y-2">
-                <Label>Select a session to continue</Label>
+                <Label>Select a database to continue</Label>
                 {savedDbs.length > 0 ? (
                   <ScrollArea className="h-40 w-full rounded-md border p-2">
                     <div className="space-y-2">
@@ -71,7 +70,7 @@ export function DatabaseDialog({ onDbSelect, onCancel, savedDbs, onDeleteDb }: D
                   </ScrollArea>
                 ) : (
                   <div className="flex items-center justify-center h-40 border rounded-md text-sm text-muted-foreground">
-                    No saved sessions found.
+                    No saved databases found.
                   </div>
                 )}
               </div>
@@ -79,7 +78,7 @@ export function DatabaseDialog({ onDbSelect, onCancel, savedDbs, onDeleteDb }: D
             <TabsContent value="new" className="mt-4">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="db-name">New Session Name</Label>
+                  <Label htmlFor="db-name">New Database Name</Label>
                   <Input
                     id="db-name"
                     value={dbName}
@@ -90,7 +89,7 @@ export function DatabaseDialog({ onDbSelect, onCancel, savedDbs, onDeleteDb }: D
                 </div>
                 <Button onClick={handleCreateAndStart} className="w-full" disabled={!dbName.trim()}>
                   <FolderPlus className="mr-2 h-4 w-4" />
-                  Create & Start Session
+                  Create & Start Database
                 </Button>
               </div>
             </TabsContent>

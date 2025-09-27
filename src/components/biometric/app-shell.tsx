@@ -46,7 +46,7 @@ export function AppShell() {
       }
     } catch (error) {
       console.error("Failed to load databases from localStorage", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not load saved sessions.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not load saved databases.' });
     }
 
     const initializeApp = async () => {
@@ -92,7 +92,7 @@ export function AppShell() {
     // If it's a new DB, allRecords is empty. If existing, load it.
     const existingRecords = savedDatabases[name] || [];
     setAllRecords(existingRecords);
-    toast({ title: "Database Ready", description: `Session '${name}' started.` });
+    toast({ title: "Database Ready", description: `Database '${name}' is active.` });
   };
 
   const handleDeleteDb = (name: string) => {
@@ -101,10 +101,10 @@ export function AppShell() {
     setSavedDatabases(newSavedDbs);
     try {
       localStorage.setItem('biometric-databases', JSON.stringify(newSavedDbs));
-      toast({ title: 'Session Deleted', description: `Session '${name}' has been removed.` });
+      toast({ title: 'Database Deleted', description: `Database '${name}' has been removed.` });
     } catch (error) {
       console.error("Failed to save databases to localStorage", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not update saved sessions.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not update saved databases.' });
     }
   };
 
@@ -224,17 +224,29 @@ export function AppShell() {
     setCurrentCaptureData({ ...currentCaptureData, images: restImages });
   };
   
-  const saveSessionToLocalStorage = () => {
+  const saveDatabaseToLocalStorage = () => {
     if (!databaseName) return;
     
-    const newSavedDbs = { ...savedDatabases, [databaseName]: allRecords };
+    // We need to use a temporary variable for the records that will be saved
+    // because the state update of allRecords might not be immediate.
+    const recordsToSave = currentCaptureData 
+        ? [...allRecords.filter(r => r.id !== currentCaptureData.id), currentCaptureData]
+        : [...allRecords];
+    
+    // In case of saving a new record, the state of allRecords is not yet updated
+    const finalRecords = currentCaptureData ? 
+        (allRecords.find(r => r.id === currentCaptureData.id) ? allRecords : [...allRecords, currentCaptureData]) 
+        : allRecords;
+
+    const newSavedDbs = { ...savedDatabases, [databaseName]: finalRecords };
     setSavedDatabases(newSavedDbs);
+
     try {
       localStorage.setItem('biometric-databases', JSON.stringify(newSavedDbs));
       return true;
     } catch (error) {
       console.error("Failed to save to localStorage", error);
-      toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save session to local storage.' });
+      toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save database to local storage.' });
       return false;
     }
   };
@@ -245,22 +257,34 @@ export function AppShell() {
     const updatedRecords = [...allRecords, currentCaptureData];
     setAllRecords(updatedRecords);
 
-    const success = saveSessionToLocalStorage();
-    
-    if (success) {
+    // Update local storage with the new record
+    const newSavedDbs = { ...savedDatabases, [databaseName]: updatedRecords };
+    setSavedDatabases(newSavedDbs);
+     try {
+      localStorage.setItem('biometric-databases', JSON.stringify(newSavedDbs));
        toast({
         title: "Record Saved",
-        description: `Data for ID ${currentCaptureData.id} has been saved successfully to session '${databaseName}'.`,
+        description: `Data for ID ${currentCaptureData.id} has been saved to database '${databaseName}'.`,
       });
+    } catch (error) {
+      console.error("Failed to save to localStorage", error);
+      toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save database to local storage.' });
     }
     
     handleResetWorkflow();
   };
 
-  const handleSaveSession = () => {
-    const success = saveSessionToLocalStorage();
-    if (success) {
-      toast({ title: 'Session Saved', description: `Your current session '${databaseName}' has been saved.` });
+  const handleSaveDatabase = () => {
+    if (!databaseName) return;
+
+    const newSavedDbs = { ...savedDatabases, [databaseName]: allRecords };
+    setSavedDatabases(newSavedDbs);
+    try {
+      localStorage.setItem('biometric-databases', JSON.stringify(newSavedDbs));
+      toast({ title: 'Database Saved', description: `Your current database '${databaseName}' has been saved.` });
+    } catch (error) {
+      console.error("Failed to save to localStorage", error);
+      toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save database to local storage.' });
     }
   };
   
@@ -324,7 +348,7 @@ export function AppShell() {
     <div className="flex flex-col min-h-screen">
       <Header 
         databaseName={databaseName}
-        onSaveSession={handleSaveSession}
+        onSaveDatabase={handleSaveDatabase}
         onExport={handleExport} 
         recordCount={allRecords.length} 
         onGoBack={handleGoBack}

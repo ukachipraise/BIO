@@ -12,13 +12,13 @@ import {
 
 interface HeaderProps {
   databaseName: string;
-  onSaveSession: () => void;
+  onSaveDatabase: () => void;
   onExport: (format: 'sql' | 'csv' | 'ipynb') => void;
   recordCount: number;
   onGoBack: () => void;
 }
 
-export function Header({ databaseName, onSaveSession, onExport, recordCount, onGoBack }: HeaderProps) {
+export function Header({ databaseName, onSaveDatabase, onExport, recordCount, onGoBack }: HeaderProps) {
   return (
     <header className="sticky top-0 z-10 w-full border-b bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-8">
@@ -39,9 +39,9 @@ export function Header({ databaseName, onSaveSession, onExport, recordCount, onG
             <p className="text-sm font-medium">{databaseName}</p>
             <p className="text-xs text-muted-foreground">{recordCount} records saved</p>
           </div>
-          <Button variant="outline" onClick={onSaveSession}>
+          <Button variant="outline" onClick={onSaveDatabase}>
             <Save className="mr-2 h-4 w-4" />
-            Save Session
+            Save Database
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
