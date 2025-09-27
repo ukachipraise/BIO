@@ -7,6 +7,10 @@ import { CAPTURE_STEPS, INITIAL_DEVICES } from '@/lib/constants';
 import { generateUniqueId, exportToSql, exportToCsv, exportToIpynb } from '@/lib/utils';
 import { getImageQualityFeedback } from '@/ai/flows/real-time-image-quality-feedback';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+
 
 import { Header } from './header';
 import { DatabaseDialog } from './database-dialog';
@@ -17,9 +21,8 @@ import { ValidationView } from './validation-view';
 import { LoadingView } from './loading-view';
 import { LandingPage } from './landing-page';
 
-const DB_LIST_KEY = 'biometric_capture_databases';
-
 export function AppShell() {
+  const { user } = useAuth();
   const [isClient, setIsClient] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [databaseName, setDatabaseName] = useState<string | null>(null);
@@ -38,16 +41,16 @@ export function AppShell() {
   useEffect(() => {
     setIsClient(true);
     
-    // Load existing databases from localStorage
-    try {
-      const savedDbs = localStorage.getItem(DB_LIST_KEY);
-      if (savedDbs) {
-        setExistingDbs(JSON.parse(savedDbs));
+    const loadDbs = async () => {
+      if (!user) return;
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        setExistingDbs(userDoc.data().databases || []);
       }
-    } catch (error) {
-      console.error("Failed to load databases from localStorage:", error);
-    }
-    
+    };
+    loadDbs();
+
     const initializeApp = async () => {
       let cameraConnected = false;
       try {
@@ -80,7 +83,7 @@ export function AppShell() {
 
     initializeApp();
 
-  }, [toast]);
+  }, [toast, user]);
   
   const handleGetStarted = () => {
     setShowLanding(false);
@@ -95,15 +98,25 @@ export function AppShell() {
     }
   };
 
-  const handleSaveDb = (name: string) => {
+  const handleSaveDb = async (name: string) => {
+    if (!user) return;
     if (!existingDbs.includes(name)) {
       const updatedDbs = [...existingDbs, name];
       setExistingDbs(updatedDbs);
+      const userDocRef = doc(db, 'users', user.uid);
       try {
-        localStorage.setItem(DB_LIST_KEY, JSON.stringify(updatedDbs));
+        const userDoc = await getDoc(userDocRef);
+        if(userDoc.exists()){
+             await updateDoc(userDocRef, {
+                databases: arrayUnion(name)
+            });
+        } else {
+            await setDoc(userDocRef, { databases: [name] });
+        }
+        
         toast({ title: "Database Saved", description: `"${name}" is now available in existing databases.` });
       } catch (error) {
-        console.error("Failed to save databases to localStorage:", error);
+        console.error("Failed to save databases to firestore:", error);
         toast({ variant: 'destructive', title: "Error", description: "Could not save database."});
       }
     } else {

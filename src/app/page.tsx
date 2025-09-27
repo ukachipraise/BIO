@@ -1,11 +1,25 @@
+
+"use client";
+
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { AppShell } from "@/components/biometric/app-shell";
-import { Toaster } from "@/components/ui/toaster";
 
 export default function Home() {
-  return (
-    <>
-      <AppShell />
-      <Toaster />
-    </>
-  );
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    // You can show a loading spinner here
+    return null;
+  }
+
+  return <AppShell />;
 }
