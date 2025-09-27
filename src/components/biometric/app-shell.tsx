@@ -7,10 +7,6 @@ import { CAPTURE_STEPS, INITIAL_DEVICES } from '@/lib/constants';
 import { generateUniqueId, exportToSql, exportToCsv, exportToIpynb } from '@/lib/utils';
 import { getImageQualityFeedback } from '@/ai/flows/real-time-image-quality-feedback';
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from '@/hooks/use-auth';
-import { getFirestoreDb } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
-
 
 import { Header } from './header';
 import { DatabaseDialog } from './database-dialog';
@@ -22,11 +18,9 @@ import { LoadingView } from './loading-view';
 import { LandingPage } from './landing-page';
 
 export function AppShell() {
-  const { user } = useAuth();
   const [isClient, setIsClient] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [databaseName, setDatabaseName] = useState<string | null>(null);
-  const [existingDbs, setExistingDbs] = useState<string[]>([]);
   const [devices, setDevices] = useState<Device[]>(INITIAL_DEVICES);
   const [allRecords, setAllRecords] = useState<CapturedDataSet[]>([]);
   const [workflowStatus, setWorkflowStatus] = useState<WorkflowStatus>('IDLE');
@@ -75,73 +69,14 @@ export function AppShell() {
 
   }, [toast]);
   
-  useEffect(() => {
-    const loadDbs = async () => {
-      if (!user) return;
-      const db = getFirestoreDb();
-      if (!db) return;
-
-      const userDocRef = doc(db, 'users', user.uid);
-      try {
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setExistingDbs(userDoc.data().databases || []);
-        }
-      } catch (error) {
-        console.error("Failed to load databases from Firestore:", error);
-        toast({ variant: 'destructive', title: "Database Error", description: "Could not load existing databases."});
-      }
-    };
-    loadDbs();
-  }, [user, toast]);
-
   const handleGetStarted = () => {
     setShowLanding(false);
   };
 
-  const handleDbSelect = (name: string, isNew: boolean) => {
+  const handleDbSelect = (name: string) => {
     setDatabaseName(name);
     toast({ title: "Database Ready", description: `Connected to ${name}.` });
-    
-    if (isNew) {
-      handleSaveDb(name);
-    }
   };
-
-  const handleSaveDb = async (name: string) => {
-    if (!user) {
-        toast({ variant: 'destructive', title: "Authentication Error", description: "You must be logged in to save a database."});
-        return;
-    }
-    const db = getFirestoreDb();
-    if (!db) {
-        toast({ variant: 'destructive', title: "Database Error", description: "Could not connect to the database."});
-        return;
-    }
-
-    if (!existingDbs.includes(name)) {
-      const updatedDbs = [...existingDbs, name];
-      setExistingDbs(updatedDbs);
-      const userDocRef = doc(db, 'users', user.uid);
-      try {
-        const userDoc = await getDoc(userDocRef);
-        if(userDoc.exists()){
-             await updateDoc(userDocRef, {
-                databases: arrayUnion(name)
-            });
-        } else {
-            await setDoc(userDocRef, { databases: [name] });
-        }
-        
-        toast({ title: "Database Saved", description: `"${name}" is now available in existing databases.` });
-      } catch (error) {
-        console.error("Failed to save databases to firestore:", error);
-        toast({ variant: 'destructive', title: "Error", description: "Could not save database."});
-      }
-    } else {
-        toast({ variant: 'default', title: "Database Exists", description: `"${name}" is already in your list of databases.` });
-    }
-  }
 
   const handleGoBack = () => {
     setDatabaseName(null);
@@ -318,7 +253,7 @@ export function AppShell() {
 
   if (!isClient || isInitializing) return <LoadingView />;
   if (showLanding) return <LandingPage onGetStarted={handleGetStarted} />;
-  if (!databaseName) return <DatabaseDialog onDbSelect={handleDbSelect} onDbSave={handleSaveDb} existingDbs={existingDbs} onCancel={handleCancelDbSelect} />;
+  if (!databaseName) return <DatabaseDialog onDbSelect={handleDbSelect} onCancel={handleCancelDbSelect} />;
 
   const currentStep = CAPTURE_STEPS[currentStepIndex];
   const capturedImage = currentCaptureData?.images[currentStep?.id as CaptureStepId];
