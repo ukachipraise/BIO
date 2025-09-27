@@ -14,6 +14,7 @@ import { DeviceStatus } from './device-status';
 import { WorkflowIdleView } from './workflow-idle-view';
 import { CaptureView } from './capture-view';
 import { ValidationView } from './validation-view';
+import { LoadingView } from './loading-view';
 
 const DB_LIST_KEY = 'biometric_capture_databases';
 
@@ -30,6 +31,7 @@ export function AppShell() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     setIsClient(true);
@@ -44,7 +46,8 @@ export function AppShell() {
       console.error("Failed to load databases from localStorage:", error);
     }
     
-    const getCameraPermission = async () => {
+    const initializeApp = async () => {
+      let cameraConnected = false;
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         setDevices(prev => prev.map(d => d.name === 'Phone Camera' ? { ...d, status: 'connected' } : d));
@@ -52,6 +55,7 @@ export function AppShell() {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
+        cameraConnected = true;
       } catch (error) {
         console.error('Error accessing camera:', error);
         setDevices(prev => prev.map(d => d.name === 'Phone Camera' ? { ...d, status: 'disconnected' } : d));
@@ -62,13 +66,17 @@ export function AppShell() {
           description: 'Please enable camera permissions in your browser settings to use this app.',
         });
       }
-    };
-    getCameraPermission();
 
-    // Simulate fingerprint scanner connection
-    setTimeout(() => {
+      // Simulate fingerprint scanner connection
+      await new Promise(resolve => setTimeout(resolve, 1500));
       setDevices(prev => prev.map(d => d.name === 'Fingerprint Scanner' ? { ...d, status: 'connected' } : d));
-    }, 1500);
+
+      // Hide loading screen after a delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setIsInitializing(false);
+    };
+
+    initializeApp();
 
   }, [toast]);
 
@@ -256,7 +264,7 @@ export function AppShell() {
     }
   };
 
-  if (!isClient) return null;
+  if (!isClient || isInitializing) return <LoadingView />;
   if (!databaseName) return <DatabaseDialog onDbSelect={handleDbSelect} existingDbs={existingDbs} />;
 
   const currentStep = CAPTURE_STEPS[currentStepIndex];
@@ -306,5 +314,3 @@ export function AppShell() {
     </div>
   );
 }
-
-    
