@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -84,6 +85,12 @@ export function AppShell() {
         console.error("Failed to save databases to localStorage:", error);
       }
     }
+  };
+
+  const handleGoBack = () => {
+    setDatabaseName(null);
+    setAllRecords([]);
+    handleResetWorkflow();
   };
 
   const handleStartCapture = () => {
@@ -257,7 +264,12 @@ export function AppShell() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header databaseName={databaseName} onExport={handleExport} recordCount={allRecords.length} />
+      <Header 
+        databaseName={databaseName} 
+        onExport={handleExport} 
+        recordCount={allRecords.length} 
+        onGoBack={handleGoBack}
+      />
       <main className="flex-grow container mx-auto p-4 md:p-8">
         <div className="grid gap-8">
           <DeviceStatus devices={devices} />
@@ -294,3 +306,5 @@ export function AppShell() {
     </div>
   );
 }
+
+    
