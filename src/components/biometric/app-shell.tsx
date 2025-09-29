@@ -324,7 +324,7 @@ export function AppShell() {
   const capturedImage = currentCaptureData?.images[currentStep?.id as CaptureStepId];
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background">
       <Header 
         databaseName={databaseName}
         onSaveDatabase={handleSaveDatabase}

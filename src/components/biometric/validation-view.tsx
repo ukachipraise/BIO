@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -27,15 +28,15 @@ export function ValidationView({ captureData, onSave, onDiscard }: ValidationVie
       <CardHeader>
         <CardTitle>Validation & Confirmation</CardTitle>
         <CardDescription>
-          Please review the captured images and their quality scores below. If they are satisfactory, save the record.
+          Review the captured data. If satisfactory, save the record.
         </CardDescription>
         <div className="flex items-center gap-2 pt-2">
             <span className="text-sm font-medium">Unique ID:</span> 
-            <Badge variant="secondary">{captureData.id}</Badge>
+            <Badge variant="secondary" className="truncate">{captureData.id}</Badge>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {CAPTURE_STEPS.map(step => {
             const image = captureData.images[step.id];
             
@@ -58,8 +59,8 @@ export function ValidationView({ captureData, onSave, onDiscard }: ValidationVie
 
             return (
               <div key={step.id} className="space-y-2">
-                <h3 className="font-medium text-sm text-center">{step.title}</h3>
-                <div className="relative aspect-[3/2] w-full overflow-hidden rounded-lg border">
+                <h3 className="font-medium text-sm text-center truncate">{step.title}</h3>
+                <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
                   {image ? (
                     <>
                       {image.isBinary ? (
@@ -83,7 +84,7 @@ export function ValidationView({ captureData, onSave, onDiscard }: ValidationVie
                       )}
                     </>
                   ) : (
-                    <div className="flex items-center justify-center h-full bg-muted text-muted-foreground">
+                    <div className="flex items-center justify-center h-full bg-muted text-muted-foreground text-xs text-center p-2">
                       Missing
                     </div>
                   )}
@@ -98,11 +99,11 @@ export function ValidationView({ captureData, onSave, onDiscard }: ValidationVie
           })}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-end gap-3">
-        <Button variant="outline" onClick={onDiscard}>
-          <Undo2 className="mr-2" /> Discard & Recapture
+      <CardFooter className="flex flex-col sm:flex-row justify-end gap-3">
+        <Button variant="outline" onClick={onDiscard} className="w-full sm:w-auto">
+          <Undo2 className="mr-2" /> Discard
         </Button>
-        <Button onClick={onSave}>
+        <Button onClick={onSave} className="w-full sm:w-auto">
           <Save className="mr-2" /> Save Record
         </Button>
       </CardFooter>

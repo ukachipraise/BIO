@@ -184,7 +184,7 @@ export function CaptureView({
   return (
     <Card>
       <CardHeader>
-        <div className="mb-2">
+        <div className="mb-4">
             <Progress value={(progress.current / progress.total) * 100} className="w-full" />
             <p className="text-sm text-muted-foreground mt-2 text-center">Step {progress.current} of {progress.total}</p>
         </div>
@@ -225,18 +225,18 @@ export function CaptureView({
           {capturedImage && <FeedbackCard image={capturedImage} />}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-end gap-3">
+      <CardFooter className="flex flex-col sm:flex-row justify-end gap-3">
         {capturedImage ? (
           <>
-            <Button variant="outline" onClick={onRecapture} disabled={capturedImage.feedbackLoading}>
+            <Button variant="outline" onClick={onRecapture} disabled={capturedImage.feedbackLoading} className="w-full sm:w-auto">
               <RefreshCw className="mr-2" /> Recapture
             </Button>
-            <Button onClick={onAccept} className="bg-accent hover:bg-accent/90" disabled={capturedImage.feedbackLoading}>
+            <Button onClick={onAccept} className="bg-accent hover:bg-accent/90 w-full sm:w-auto" disabled={capturedImage.feedbackLoading}>
               <Check className="mr-2" /> Accept & Continue
             </Button>
           </>
         ) : (
-          <Button size="lg" disabled={true}>
+          <Button size="lg" disabled={true} className="w-full sm:w-auto">
             {isCameraStep ? <Camera className="mr-2" /> : <Upload className="mr-2" />}
             Awaiting Input...
           </Button>

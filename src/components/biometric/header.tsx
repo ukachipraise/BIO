@@ -22,32 +22,42 @@ export function Header({ databaseName, onSaveDatabase, onExport, recordCount, on
   return (
     <header className="sticky top-0 z-10 w-full border-b bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-8">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Button variant="ghost" size="icon" onClick={onGoBack} className="h-8 w-8">
             <ArrowLeft />
             <span className="sr-only">Go Back</span>
           </Button>
           <div className="flex items-center gap-2">
             <Fingerprint className="h-8 w-8 text-primary hidden sm:block" />
-            <h1 className="text-xl font-bold tracking-tight md:text-2xl">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight md:text-2xl">
               Biometric Capture Pro
             </h1>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium">{databaseName}</p>
-            <p className="text-xs text-muted-foreground">{recordCount} records saved</p>
+          <div className="text-right hidden md:block">
+            <p className="text-sm font-medium truncate max-w-40">{databaseName}</p>
+            <p className="text-xs text-muted-foreground">{recordCount} records</p>
           </div>
-          <Button variant="outline" onClick={onSaveDatabase}>
+          <Button variant="outline" onClick={onSaveDatabase} size="icon" className="sm:hidden">
+            <Save />
+            <span className="sr-only">Save Database</span>
+          </Button>
+          <Button variant="outline" onClick={onSaveDatabase} className="hidden sm:inline-flex">
             <Save className="mr-2 h-4 w-4" />
-            Save Database
+            Save
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button disabled={recordCount === 0}>
+                <Button disabled={recordCount === 0} size="icon" className="sm:hidden">
+                    <Download />
+                    <span className="sr-only">Export Data</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild>
+              <Button disabled={recordCount === 0} className="hidden sm:inline-flex">
                 <Download className="mr-2" />
-                Export Data
+                Export
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -68,5 +78,3 @@ export function Header({ databaseName, onSaveDatabase, onExport, recordCount, on
     </header>
   );
 }
-
-    
