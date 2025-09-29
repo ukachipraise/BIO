@@ -6,6 +6,7 @@ import type { Device, CapturedDataSet, WorkflowStatus, CapturedImage, CaptureSte
 import { CAPTURE_STEPS, INITIAL_DEVICES } from '@/lib/constants';
 import { generateUniqueId, exportToSql, exportToCsv, exportToIpynb } from '@/lib/utils';
 import { getImageQualityFeedback } from '@/ai/flows/real-time-image-quality-feedback';
+import { getNfiqQualityFeedback } from '@/ai/flows/nfiq2-quality-feedback';
 import { useToast } from "@/hooks/use-toast";
 
 import { Header } from './header';
@@ -38,7 +39,6 @@ export function AppShell() {
   useEffect(() => {
     setIsClient(true);
     
-    // Load saved databases from localStorage
     try {
       const saved = localStorage.getItem('biometric-databases');
       if (saved) {
@@ -70,11 +70,9 @@ export function AppShell() {
         });
       }
 
-      // Simulate fingerprint scanner connection
       await new Promise(resolve => setTimeout(resolve, 1500));
       setDevices(prev => prev.map(d => d.name === 'Fingerprint Scanner' ? { ...d, status: 'connected' } : d));
 
-      // Hide loading screen after a delay
       await new Promise(resolve => setTimeout(resolve, 500));
       setIsInitializing(false);
     };
@@ -89,7 +87,6 @@ export function AppShell() {
 
   const handleDbSelect = (name: string) => {
     setDatabaseName(name);
-    // If it's a new DB, allRecords is empty. If existing, load it.
     const existingRecords = savedDatabases[name] || [];
     setAllRecords(existingRecords);
     toast({ title: "Database Ready", description: `Database '${name}' is active.` });
@@ -137,38 +134,42 @@ export function AppShell() {
       stepId: currentStep.id,
       url: dataUri,
       dataUri,
-      feedbackLoading: device === 'camera' && !isBinary, // Only show loading for camera images
+      feedbackLoading: true, // Start loading for both
       device,
       isBinary,
       fileName,
     };
     setCurrentCaptureData({ ...currentCaptureData, images: updatedImages });
 
-    if (device === 'camera' && !isBinary) {
-      let feedback = null;
-      try {
-        feedback = await getImageQualityFeedback({ photoDataUri: dataUri });
-      } catch (error) {
-        console.error("AI feedback failed:", error);
-        toast({
-          variant: "destructive",
-          title: "AI Analysis Failed",
-          description: "Could not get image quality feedback.",
-        });
+    let qualityFeedback = null;
+    let nfiqFeedback = null;
+
+    try {
+      if (device === 'camera' && !isBinary) {
+        qualityFeedback = await getImageQualityFeedback({ photoDataUri: dataUri });
+      } else if (device === 'scanner' && !isBinary) {
+        nfiqFeedback = await getNfiqQualityFeedback({ photoDataUri: dataUri });
       }
-      
-      // Re-fetch state in case it changed during async operation
-      setCurrentCaptureData(prevData => {
-        if (!prevData) return null;
-        const freshImages = { ...prevData.images };
-        freshImages[currentStep.id] = {
-          ...freshImages[currentStep.id],
-          qualityFeedback: feedback,
-          feedbackLoading: false,
-        };
-        return { ...prevData, images: freshImages };
+    } catch (error) {
+      console.error("AI feedback failed:", error);
+      toast({
+        variant: "destructive",
+        title: "AI Analysis Failed",
+        description: "Could not get image quality feedback.",
       });
     }
+      
+    setCurrentCaptureData(prevData => {
+      if (!prevData) return null;
+      const freshImages = { ...prevData.images };
+      freshImages[currentStep.id] = {
+        ...freshImages[currentStep.id],
+        qualityFeedback: qualityFeedback,
+        nfiqFeedback: nfiqFeedback,
+        feedbackLoading: false,
+      };
+      return { ...prevData, images: freshImages };
+    });
   };
 
   const handleImageCapture = async () => {
@@ -196,7 +197,7 @@ export function AppShell() {
     reader.onload = (e) => {
         const dataUri = e.target?.result as string;
         if (dataUri) {
-            processImage(dataUri, currentStep.device, isBinary, file.name);
+            processImage(dataUri, currentStep.device, isBinary || !file.type.startsWith('image/'), file.name);
         }
     };
     reader.onerror = () => {
@@ -224,21 +225,10 @@ export function AppShell() {
     setCurrentCaptureData({ ...currentCaptureData, images: restImages });
   };
   
-  const saveDatabaseToLocalStorage = () => {
+  const saveDatabaseToLocalStorage = (recordsToSave: CapturedDataSet[]) => {
     if (!databaseName) return;
-    
-    // We need to use a temporary variable for the records that will be saved
-    // because the state update of allRecords might not be immediate.
-    const recordsToSave = currentCaptureData 
-        ? [...allRecords.filter(r => r.id !== currentCaptureData.id), currentCaptureData]
-        : [...allRecords];
-    
-    // In case of saving a new record, the state of allRecords is not yet updated
-    const finalRecords = currentCaptureData ? 
-        (allRecords.find(r => r.id === currentCaptureData.id) ? allRecords : [...allRecords, currentCaptureData]) 
-        : allRecords;
 
-    const newSavedDbs = { ...savedDatabases, [databaseName]: finalRecords };
+    const newSavedDbs = { ...savedDatabases, [databaseName]: recordsToSave };
     setSavedDatabases(newSavedDbs);
 
     try {
@@ -254,21 +244,17 @@ export function AppShell() {
   const handleSaveRecord = () => {
     if (!currentCaptureData || !databaseName) return;
     
-    const updatedRecords = [...allRecords, currentCaptureData];
+    const updatedRecords = allRecords.find(r => r.id === currentCaptureData.id)
+      ? allRecords.map(r => r.id === currentCaptureData.id ? currentCaptureData : r)
+      : [...allRecords, currentCaptureData];
+      
     setAllRecords(updatedRecords);
 
-    // Update local storage with the new record
-    const newSavedDbs = { ...savedDatabases, [databaseName]: updatedRecords };
-    setSavedDatabases(newSavedDbs);
-     try {
-      localStorage.setItem('biometric-databases', JSON.stringify(newSavedDbs));
+    if(saveDatabaseToLocalStorage(updatedRecords)) {
        toast({
         title: "Record Saved",
         description: `Data for ID ${currentCaptureData.id} has been saved to database '${databaseName}'.`,
       });
-    } catch (error) {
-      console.error("Failed to save to localStorage", error);
-      toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save database to local storage.' });
     }
     
     handleResetWorkflow();
@@ -276,15 +262,9 @@ export function AppShell() {
 
   const handleSaveDatabase = () => {
     if (!databaseName) return;
-
-    const newSavedDbs = { ...savedDatabases, [databaseName]: allRecords };
-    setSavedDatabases(newSavedDbs);
-    try {
-      localStorage.setItem('biometric-databases', JSON.stringify(newSavedDbs));
+    
+    if (saveDatabaseToLocalStorage(allRecords)) {
       toast({ title: 'Database Saved', description: `Your current database '${databaseName}' has been saved.` });
-    } catch (error) {
-      console.error("Failed to save to localStorage", error);
-      toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save database to local storage.' });
     }
   };
   
@@ -310,7 +290,6 @@ export function AppShell() {
       exportToSql(allRecords, `${fileNameBase}.sql`);
       toast({ title: "Export Successful", description: `Data exported to ${fileNameBase}.sql` });
     } else if (format === 'csv') {
-      // We need to flatten the data for CSV export
       const flattenedData = allRecords.flatMap(record => 
         Object.values(record.images).map(image => ({
           record_id: record.id,
@@ -323,8 +302,8 @@ export function AppShell() {
           blur_level: image.qualityFeedback?.blurLevel,
           lighting_condition: image.qualityFeedback?.lightingCondition,
           feedback: image.qualityFeedback?.feedback,
-          // url is too long for CSV, so we omit it or provide a truncated version
-          // url: image.url.substring(0, 30) + '...',
+          nfiq_score: image.nfiqFeedback?.nfiqScore,
+          nfiq_feedback: image.nfiqFeedback?.feedback,
         }))
       );
       exportToCsv(flattenedData, `${fileNameBase}.csv`);
@@ -389,5 +368,3 @@ export function AppShell() {
     </div>
   );
 }
-
-    

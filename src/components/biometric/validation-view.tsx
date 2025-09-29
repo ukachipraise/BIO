@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Save, Undo2, CheckCircle, File } from "lucide-react";
+import { Save, Undo2, CheckCircle, XCircle, File } from "lucide-react";
 import type { CapturedDataSet } from "@/lib/types";
 import { CAPTURE_STEPS } from "@/lib/constants";
 
@@ -27,7 +27,7 @@ export function ValidationView({ captureData, onSave, onDiscard }: ValidationVie
       <CardHeader>
         <CardTitle>Validation & Confirmation</CardTitle>
         <CardDescription>
-          Please review the captured images below. If they are satisfactory, save the record.
+          Please review the captured images and their quality scores below. If they are satisfactory, save the record.
         </CardDescription>
         <div className="flex items-center gap-2 pt-2">
             <span className="text-sm font-medium">Unique ID:</span> 
@@ -38,9 +38,23 @@ export function ValidationView({ captureData, onSave, onDiscard }: ValidationVie
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {CAPTURE_STEPS.map(step => {
             const image = captureData.images[step.id];
-            const isGoodQuality = image?.device === 'camera' 
-              ? (image.qualityFeedback?.qualityScore ?? 0) > 70
-              : true;
+            
+            let isGoodQuality = false;
+            let qualityScore: number | string | null = null;
+            
+            if (image) {
+              if (image.device === 'camera' && image.qualityFeedback) {
+                isGoodQuality = image.qualityFeedback.qualityScore > 70;
+                qualityScore = `${image.qualityFeedback.qualityScore}/100`;
+              } else if (image.device === 'scanner' && image.nfiqFeedback) {
+                isGoodQuality = image.nfiqFeedback.nfiqScore > 60;
+                qualityScore = `${image.nfiqFeedback.nfiqScore}/100 (NFIQ)`;
+              } else if (image.isBinary) {
+                isGoodQuality = true;
+                qualityScore = "N/A";
+              }
+            }
+
 
             return (
               <div key={step.id} className="space-y-2">
@@ -62,9 +76,9 @@ export function ValidationView({ captureData, onSave, onDiscard }: ValidationVie
                           data-ai-hint="fingerprint photo"
                         />
                       )}
-                      {image.device === 'camera' && !image.isBinary && (
-                        <div className={`absolute top-2 right-2 p-1 rounded-full bg-background/80 ${isGoodQuality ? 'text-green-500' : 'text-red-500'}`}>
-                          <CheckCircle className="h-5 w-5" />
+                      {qualityScore && (
+                        <div className={`absolute top-1 right-1 p-1 rounded-full bg-background/80 ${isGoodQuality ? 'text-green-500' : 'text-red-500'}`}>
+                          {isGoodQuality ? <CheckCircle className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
                         </div>
                       )}
                     </>
@@ -74,6 +88,11 @@ export function ValidationView({ captureData, onSave, onDiscard }: ValidationVie
                     </div>
                   )}
                 </div>
+                 {qualityScore && (
+                  <div className="text-xs text-center text-muted-foreground">
+                    Quality: <span className="font-bold">{qualityScore}</span>
+                  </div>
+                )}
               </div>
             )
           })}

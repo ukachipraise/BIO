@@ -33,52 +33,73 @@ interface CaptureViewProps {
   hasCameraPermission: boolean | null;
 }
 
-function ImageQualityCard({ image }: { image: CapturedImage }) {
-  if (image.isBinary || image.device !== 'camera') return null;
+function FeedbackCard({ image }: { image: CapturedImage }) {
+    if (image.isBinary) return null;
 
-  if (image.feedbackLoading) {
-    return (
-      <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-        <Sparkles className="h-4 w-4 text-blue-500" />
-        <AlertTitle>Analyzing Image...</AlertTitle>
-        <AlertDescription>
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Please wait while we assess the image quality.
-          </div>
-        </AlertDescription>
-      </Alert>
-    );
-  }
+    if (image.feedbackLoading) {
+        return (
+        <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <Sparkles className="h-4 w-4 text-blue-500" />
+            <AlertTitle>Analyzing Image...</AlertTitle>
+            <AlertDescription>
+            <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Please wait while we assess the image quality.
+            </div>
+            </AlertDescription>
+        </Alert>
+        );
+    }
+    
+    if (image.device === 'camera' && image.qualityFeedback) {
+        const { qualityScore, blurLevel, lightingCondition, feedback } = image.qualityFeedback;
+        const isGoodQuality = qualityScore > 70;
+        return (
+             <Alert variant={isGoodQuality ? "default" : "destructive"} className={isGoodQuality ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" : ""}>
+                {isGoodQuality ? <ThumbsUp className="h-4 w-4" /> : <ThumbsDown className="h-4 w-4" />}
+                <AlertTitle>{isGoodQuality ? "Good Quality Image" : "Needs Improvement"}</AlertTitle>
+                <AlertDescription>
+                    <div className="space-y-2">
+                    <div className="flex justify-between">
+                        <span>Quality Score:</span>
+                        <span className="font-bold">{qualityScore}/100</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span>Blur:</span>
+                        <span>{blurLevel}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span>Lighting:</span>
+                        <span>{lightingCondition}</span>
+                    </div>
+                    <p className="pt-2 border-t mt-2">{feedback}</p>
+                    </div>
+                </AlertDescription>
+            </Alert>
+        )
+    }
 
-  if (!image.qualityFeedback) return null;
+    if (image.device === 'scanner' && image.nfiqFeedback) {
+        const { nfiqScore, feedback } = image.nfiqFeedback;
+        const isGoodQuality = nfiqScore > 60;
+        return (
+             <Alert variant={isGoodQuality ? "default" : "destructive"} className={isGoodQuality ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" : ""}>
+                {isGoodQuality ? <ThumbsUp className="h-4 w-4" /> : <ThumbsDown className="h-4 w-4" />}
+                <AlertTitle>{isGoodQuality ? "Good NFIQ Score" : "Low NFIQ Score"}</AlertTitle>
+                <AlertDescription>
+                    <div className="space-y-2">
+                    <div className="flex justify-between">
+                        <span>NFIQ 2.0 Score:</span>
+                        <span className="font-bold">{nfiqScore}/100</span>
+                    </div>
+                    <p className="pt-2 border-t mt-2">{feedback}</p>
+                    </div>
+                </AlertDescription>
+            </Alert>
+        )
+    }
 
-  const { qualityScore, blurLevel, lightingCondition, feedback } = image.qualityFeedback;
-  const isGoodQuality = qualityScore > 70;
-
-  return (
-    <Alert variant={isGoodQuality ? "default" : "destructive"} className={isGoodQuality ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" : ""}>
-      {isGoodQuality ? <ThumbsUp className="h-4 w-4" /> : <ThumbsDown className="h-4 w-4" />}
-      <AlertTitle>{isGoodQuality ? "Good Quality Image" : "Needs Improvement"}</AlertTitle>
-      <AlertDescription>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span>Quality Score:</span>
-            <span className="font-bold">{qualityScore}/100</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Blur:</span>
-            <span>{blurLevel}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Lighting:</span>
-            <span>{lightingCondition}</span>
-          </div>
-          <p className="pt-2 border-t mt-2">{feedback}</p>
-        </div>
-      </AlertDescription>
-    </Alert>
-  );
+    return null;
 }
 
 function CapturePreview({ step, capturedImage, videoRef, hasCameraPermission }: Pick<CaptureViewProps, 'step' | 'capturedImage' | 'videoRef' | 'hasCameraPermission'>) {
@@ -115,7 +136,6 @@ function CapturePreview({ step, capturedImage, videoRef, hasCameraPermission }: 
         );
     }
     
-    // For scanner
     return (
         <>
             <Image src={placeholderUrl} alt="Scanner placeholder" fill className="object-cover opacity-20" data-ai-hint="fingerprint scan" />
@@ -142,7 +162,6 @@ function FileUpload({ onFileUpload, idPrefix, accept }: { onFileUpload: (file: F
         <div className="grid w-full max-w-sm items-center gap-1.5">
           <Label htmlFor={`${idPrefix}-upload`}>Upload File</Label>
           <Input id={`${idPrefix}-upload`} type="file" accept={accept} onChange={handleFileChange} ref={inputRef} />
-          <p className="text-xs text-muted-foreground">Or upload a file from your device.</p>
         </div>
     );
 }
@@ -160,7 +179,7 @@ export function CaptureView({
 }: CaptureViewProps) {
   const isCameraStep = step.device === 'camera';
   const canCapture = isCameraStep ? hasCameraPermission : true;
-  const fileAccept = "*/*";
+  const fileAccept = isCameraStep ? "image/jpeg, image/png, image/webp" : "*/*";
 
   return (
     <Card>
@@ -183,23 +202,27 @@ export function CaptureView({
         </div>
         <div className="flex flex-col justify-center space-y-4">
           {!capturedImage && (
-             isCameraStep ? (
-                <div className="space-y-4">
+             <div className="space-y-4">
+                {isCameraStep ? (
                     <Button onClick={onCapture} size="lg" disabled={!canCapture} className="w-full">
                         <Camera className="mr-2" /> Capture from Camera
                     </Button>
-                    <div className="flex items-center gap-4">
-                        <Separator className="flex-1" />
-                        <span className="text-xs text-muted-foreground">OR</span>
-                        <Separator className="flex-1" />
-                    </div>
-                    <FileUpload onFileUpload={onFileUpload} idPrefix="camera" accept={fileAccept} />
+                ) : (
+                    <Button onClick={() => document.getElementById('scanner-upload')?.click()} size="lg" className="w-full">
+                        <Upload className="mr-2" /> Upload from Scanner
+                    </Button>
+                )}
+
+                <div className="flex items-center gap-4">
+                    <Separator className="flex-1" />
+                    <span className="text-xs text-muted-foreground">OR</span>
+                    <Separator className="flex-1" />
                 </div>
-            ) : (
-                <FileUpload onFileUpload={onFileUpload} idPrefix="scanner" accept={fileAccept} />
-            )
+                
+                <FileUpload onFileUpload={onFileUpload} idPrefix={step.device} accept={fileAccept} />
+            </div>
           )}
-          {capturedImage && <ImageQualityCard image={capturedImage} />}
+          {capturedImage && <FeedbackCard image={capturedImage} />}
         </div>
       </CardContent>
       <CardFooter className="flex justify-end gap-3">
@@ -222,5 +245,3 @@ export function CaptureView({
     </Card>
   );
 }
-
-    

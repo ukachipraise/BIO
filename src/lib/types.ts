@@ -1,4 +1,5 @@
 import type { ImageQualityFeedbackOutput } from '@/ai/flows/real-time-image-quality-feedback';
+import type { NfiqQualityFeedbackOutput } from '@/ai/flows/nfiq2-quality-feedback';
 
 export type CaptureStepId = 'CAMERA_INDEX' | 'CAMERA_THUMB' | 'SCANNER_INDEX' | 'SCANNER_THUMB';
 
@@ -23,6 +24,7 @@ export type CapturedImage = {
   url: string;
   dataUri?: string;
   qualityFeedback?: ImageQualityFeedbackOutput | null;
+  nfiqFeedback?: NfiqQualityFeedbackOutput | null;
   feedbackLoading?: boolean;
   device: 'camera' | 'scanner';
   isBinary?: boolean;

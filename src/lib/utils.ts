@@ -72,6 +72,8 @@ CREATE TABLE images (
     blur_level VARCHAR(255),
     lighting_condition VARCHAR(255),
     feedback TEXT,
+    nfiq_score INT,
+    nfiq_feedback TEXT,
     PRIMARY KEY (record_id, step_id),
     FOREIGN KEY (record_id) REFERENCES records(id)
 );
@@ -84,16 +86,17 @@ CREATE TABLE images (
     for (const stepId in record.images) {
       const image = record.images[stepId as keyof typeof record.images];
       if (image) {
-        // For binary files, we save a reference, for others the full data URI
         const urlToSave = image.isBinary ? `[Binary data for ${image.fileName}]` : image.url;
-        sqlContent += `INSERT INTO images (record_id, step_id, url, quality_score, blur_level, lighting_condition, feedback) VALUES (
+        sqlContent += `INSERT INTO images (record_id, step_id, url, quality_score, blur_level, lighting_condition, feedback, nfiq_score, nfiq_feedback) VALUES (
           ${escapeSql(record.id)},
           ${escapeSql(image.stepId)},
           ${escapeSql(urlToSave)},
           ${image.qualityFeedback ? image.qualityFeedback.qualityScore : 'NULL'},
           ${escapeSql(image.qualityFeedback ? image.qualityFeedback.blurLevel : null)},
           ${escapeSql(image.qualityFeedback ? image.qualityFeedback.lightingCondition : null)},
-          ${escapeSql(image.qualityFeedback ? image.qualityFeedback.feedback : null)}
+          ${escapeSql(image.qualityFeedback ? image.qualityFeedback.feedback : null)},
+          ${image.nfiqFeedback ? image.nfiqFeedback.nfiqScore : 'NULL'},
+          ${escapeSql(image.nfiqFeedback ? image.nfiqFeedback.feedback : null)}
         );\n`;
       }
     }
@@ -227,18 +230,18 @@ export function exportToIpynb(data: CapturedDataSet[], fileName: string) {
           "    row = {\n",
           "        'id': record['id'],\n",
           "        'date': record['timestamp'],\n",
-          "        'Photo index': record['images'].get('CAMERA_INDEX', {}).get('dataUri', None),\n",
-          "        'scanned index': record['images'].get('SCANNER_INDEX', {}).get('dataUri', None), # Raw data URI\n",
-          "        'photo thumb': record['images'].get('CAMERA_THUMB', {}).get('dataUri', None),\n",
-          "        'scanned thumb': record['images'].get('SCANNER_THUMB', {}).get('dataUri', None), # Raw data URI\n",
+          "        'photo_index_uri': record['images'].get('CAMERA_INDEX', {}).get('dataUri', None),\n",
+          "        'photo_index_score': record['images'].get('CAMERA_INDEX', {}).get('qualityFeedback', {}).get('qualityScore', None),\n",
+          "        'scanner_index_uri': record['images'].get('SCANNER_INDEX', {}).get('dataUri', None),\n",
+          "        'scanner_index_nfiq': record['images'].get('SCANNER_INDEX', {}).get('nfiqFeedback', {}).get('nfiqScore', None),\n",
+          "        'photo_thumb_uri': record['images'].get('CAMERA_THUMB', {}).get('dataUri', None),\n",
+          "        'photo_thumb_score': record['images'].get('CAMERA_THUMB', {}).get('qualityFeedback', {}).get('qualityScore', None),\n",
+          "        'scanner_thumb_uri': record['images'].get('SCANNER_THUMB', {}).get('dataUri', None),\n",
+          "        'scanner_thumb_nfiq': record['images'].get('SCANNER_THUMB', {}).get('nfiqFeedback', {}).get('nfiqScore', None),\n",
           "    }\n",
           "    wide_data.append(row)\n\n",
           "df = pd.DataFrame(wide_data)\n\n",
-          "# Reorder columns\n",
-          "df = df[['id', 'date', 'Photo index', 'scanned index', 'photo thumb', 'scanned thumb']]\n\n",
-          "# Show the dataframe info to confirm types\n",
-          "df.info()\n\n",
-          "# Display the dataframe. Scanned columns will show the raw data URI.\n",
+          "df.info()\n",
           "display(df)"
         ]
       },
@@ -258,11 +261,9 @@ export function exportToIpynb(data: CapturedDataSet[], fileName: string) {
         source: [
             "if not df.empty:\n",
             "    print(\"Displaying Photo Index from first record:\")\n",
-            "    display_image(df.iloc[0]['Photo index'])\n",
+            "    display_image(df.iloc[0]['photo_index_uri'])\n",
             "    \n",
-            "    print(\"\\nScanned Index data from first record (raw data URI):\")\n",
-            "    # We can't display this directly as an image without knowing its format\n",
-            "    print(df.iloc[0]['scanned index'][:100] + '...') # Print first 100 chars\n",
+            "    print(f\"Quality Score: {df.iloc[0]['photo_index_score']}\")\n",
             "else:\n",
             "    print(\"DataFrame is empty. No records to display.\")"
         ]
