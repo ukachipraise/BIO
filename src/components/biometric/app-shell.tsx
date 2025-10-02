@@ -80,6 +80,15 @@ export function AppShell() {
     initializeApp();
 
   }, [toast]);
+
+  useEffect(() => {
+    if (databaseName && allRecords) {
+      setSavedDatabases(prevDbs => ({
+        ...prevDbs,
+        [databaseName]: allRecords,
+      }));
+    }
+  }, [allRecords, databaseName]);
   
   const handleGetStarted = () => {
     setShowLanding(false);
@@ -225,18 +234,17 @@ export function AppShell() {
     setCurrentCaptureData({ ...currentCaptureData, images: restImages });
   };
   
-  const saveDatabaseToLocalStorage = (recordsToSave: CapturedDataSet[]) => {
-    if (!databaseName) return;
-
-    const newSavedDbs = { ...savedDatabases, [databaseName]: recordsToSave };
-    setSavedDatabases(newSavedDbs);
-
+  const saveDatabaseToLocalStorage = () => {
     try {
-      localStorage.setItem('biometric-databases', JSON.stringify(newSavedDbs));
+      localStorage.setItem('biometric-databases', JSON.stringify(savedDatabases));
       return true;
     } catch (error) {
       console.error("Failed to save to localStorage", error);
-      toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save database to local storage.' });
+      let description = 'Could not save database to local storage.';
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        description = 'Storage quota exceeded. Please free up space or reduce data size.';
+      }
+      toast({ variant: 'destructive', title: 'Save Error', description });
       return false;
     }
   };
@@ -244,14 +252,15 @@ export function AppShell() {
   const handleSaveRecord = () => {
     if (!currentCaptureData || !databaseName) return;
     
-    const updatedRecords = allRecords.find(r => r.id === currentCaptureData.id)
+    const recordExists = allRecords.some(r => r.id === currentCaptureData.id);
+    const updatedRecords = recordExists
       ? allRecords.map(r => r.id === currentCaptureData.id ? currentCaptureData : r)
       : [...allRecords, currentCaptureData];
       
     setAllRecords(updatedRecords);
 
-    if(saveDatabaseToLocalStorage(updatedRecords)) {
-       toast({
+    if (saveDatabaseToLocalStorage()) {
+      toast({
         title: "Record Saved",
         description: `Data for ID ${currentCaptureData.id} has been saved to database '${databaseName}'.`,
       });
@@ -263,7 +272,7 @@ export function AppShell() {
   const handleSaveDatabase = () => {
     if (!databaseName) return;
     
-    if (saveDatabaseToLocalStorage(allRecords)) {
+    if (saveDatabaseToLocalStorage()) {
       toast({ title: 'Database Saved', description: `Your current database '${databaseName}' has been saved.` });
     }
   };
