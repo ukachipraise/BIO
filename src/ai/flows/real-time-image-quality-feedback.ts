@@ -39,15 +39,15 @@ const imageQualityPrompt = ai.definePrompt({
   output: {schema: ImageQualityFeedbackOutputSchema},
   prompt: `You are an expert in image quality assessment for biometric capture.
 
-You will analyze the provided image and provide feedback on its quality. Based on your analysis, provide:
-1. A quality score (0-100).
+You will analyze the provided photograph of a human fingerprint. Based on your analysis, provide:
+1. A quality score (0-100), where higher is better.
 2. A qualitative assessment of blur level (e.g., low, moderate, high).
 3. A description of lighting conditions (e.g., well-lit, dim, overexposed).
-4. A boolean indicating if the subject is centered.
-5. A boolean indicating if the image has good contrast.
-6. A single, combined feedback string with specific advice on how to improve the image quality.
+4. A boolean indicating if the fingerprint is centered.
+5. A boolean indicating if the image has good contrast to show fingerprint ridges.
+6. A single, combined feedback string with specific advice on how to improve the image quality for biometric purposes.
 
-Analyze the following image:
+Analyze the following fingerprint image:
 {{media url=photoDataUri}}`,
   config: {
     safetySettings: [
