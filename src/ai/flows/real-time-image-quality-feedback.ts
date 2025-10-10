@@ -23,7 +23,9 @@ const ImageQualityFeedbackOutputSchema = z.object({
   qualityScore: z.number().describe('A score representing the overall image quality (0-100).'),
   blurLevel: z.string().describe('Qualitative assessment of blur level (e.g., low, moderate, high).'),
   lightingCondition: z.string().describe('Description of lighting conditions (e.g., well-lit, dim, overexposed).'),
-  feedback: z.string().describe('Specific feedback on how to improve image quality.'),
+  isCentered: z.boolean().describe('Whether the main subject is reasonably centered in the frame.'),
+  hasGoodContrast: z.boolean().describe('Whether the image has good contrast between the subject and background.'),
+  feedback: z.string().describe('Specific, combined feedback on how to improve image quality.'),
 });
 export type ImageQualityFeedbackOutput = z.infer<typeof ImageQualityFeedbackOutputSchema>;
 
@@ -35,11 +37,15 @@ const imageQualityPrompt = ai.definePrompt({
   name: 'imageQualityPrompt',
   input: {schema: ImageQualityFeedbackInputSchema},
   output: {schema: ImageQualityFeedbackOutputSchema},
-  prompt: `You are an expert in image quality assessment.
+  prompt: `You are an expert in image quality assessment for biometric capture.
 
-You will analyze the provided image and provide feedback on its quality, including blur level and lighting conditions.
-
-Based on your analysis, provide a quality score (0-100), a qualitative assessment of blur level (e.g., low, moderate, high), a description of lighting conditions (e.g., well-lit, dim, overexposed), and specific feedback on how to improve the image quality.
+You will analyze the provided image and provide feedback on its quality. Based on your analysis, provide:
+1. A quality score (0-100).
+2. A qualitative assessment of blur level (e.g., low, moderate, high).
+3. A description of lighting conditions (e.g., well-lit, dim, overexposed).
+4. A boolean indicating if the subject is centered.
+5. A boolean indicating if the image has good contrast.
+6. A single, combined feedback string with specific advice on how to improve the image quality.
 
 Analyze the following image:
 {{media url=photoDataUri}}`,

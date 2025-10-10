@@ -21,7 +21,8 @@ export type NfiqQualityFeedbackInput = z.infer<typeof NfiqQualityFeedbackInputSc
 
 const NfiqQualityFeedbackOutputSchema = z.object({
   nfiqScore: z.number().describe('An NFIQ 2.0 score representing the fingerprint image quality (0-100).'),
-  feedback: z.string().describe('Specific feedback on how to improve the fingerprint scan quality.'),
+  minutiaeCount: z.number().describe('The estimated number of usable minutiae points detected.'),
+  feedback: z.string().describe('Specific feedback on how to improve the fingerprint scan quality, mentioning minutiae if relevant.'),
 });
 export type NfiqQualityFeedbackOutput = z.infer<typeof NfiqQualityFeedbackOutputSchema>;
 
@@ -35,7 +36,10 @@ const nfiqQualityPrompt = ai.definePrompt({
   output: {schema: NfiqQualityFeedbackOutputSchema},
   prompt: `You are an expert in fingerprint quality assessment, specifically using the NFIQ 2.0 standard.
 
-You will analyze the provided fingerprint image and return a quality score from 0 (unusable) to 100 (excellent), according to the NFIQ 2.0 specification. Also provide brief, actionable feedback for improving the scan.
+You will analyze the provided fingerprint image. Your goal is to:
+1. Return a quality score from 0 (unusable) to 100 (excellent), according to the NFIQ 2.0 specification.
+2. Estimate the number of usable minutiae points (ridges, bifurcations) you can detect in the image.
+3. Provide brief, actionable feedback for improving the scan, referencing the minutiae count if it's too low.
 
 Analyze the following fingerprint image:
 {{media url=photoDataUri}}`,
